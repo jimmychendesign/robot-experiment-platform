@@ -1,6 +1,8 @@
 "use client";
 
 import { useEffect, useMemo, useState, type Dispatch, type SetStateAction } from "react";
+import { AlertTriangle, Bot, CalendarDays, Check, CheckCircle2, ChevronDown, ChevronLeft, ChevronRight, ClipboardList, FlaskConical, Gauge, Menu, MoreHorizontal, Pause, Play, Plus, Search, Settings2, UserRound, UsersRound, Wrench, X, type LucideIcon } from "lucide-react";
+import { Badge, Button, IconButton, MetricCard, Tabs, Tooltip } from "./design-system";
 
 type Robot = {
   name: string; status: "运行中" | "空闲" | "已暂停" | "维护中"; tester: string;
@@ -247,18 +249,38 @@ function buildScheduleRows(dimension: "robot" | "tester", robotPool: Robot[] = r
 }
 
 const attention = [
-  { icon: "人", kind: "Tester 未匹配", title: "1 个实验等待指定 Tester", desc: "系统没有找到同时可用且具备该 Robot 操作权限的实验员，只需补充 Tester。", action: "指定 Tester", tone: "amber" },
+  { icon: UserRound, kind: "Tester 未匹配", title: "1 个实验等待指定 Tester", desc: "系统没有找到同时可用且具备该 Robot 操作权限的实验员，只需补充 Tester。", action: "指定 Tester", tone: "amber" },
 ];
 
-const consoles: { id: ConsoleRole; label: string; icon: string; hint: string }[] = [
-  { id: "manager", label: "实验管理员控制台", icon: "管", hint: "排期与冲突管理" },
-  { id: "requester", label: "实验需求方控制台", icon: "需", hint: "提交与追踪需求" },
-  { id: "tester", label: "实验员控制台", icon: "验", hint: "执行任务与请假" },
+const consoles: { id: ConsoleRole; label: string; icon: LucideIcon; hint: string }[] = [
+  { id: "manager", label: "实验管理员控制台", icon: Gauge, hint: "排期与资源管理" },
+  { id: "requester", label: "实验需求方控制台", icon: ClipboardList, hint: "提交与追踪需求" },
+  { id: "tester", label: "实验员控制台", icon: FlaskConical, hint: "执行任务与请假" },
 ];
 
 function StatusBadge({ value }: { value: string }) {
-  const map: Record<string, string> = { "运行中": "green", "空闲": "blue", "已暂停": "amber", "维护中": "gray", "未排期": "amber", "可排期": "green", "等待资源": "red" };
-  return <span className={`badge ${map[value] || "gray"}`}><i />{value}</span>;
+  const tone = ({ "运行中": "success", "空闲": "info", "已暂停": "warning", "维护中": "neutral", "未排期": "warning", "可排期": "success", "等待资源": "danger", "冲突": "danger", "已完成": "neutral", "进行中": "success", "已排期": "info", "待执行": "info" } as const)[value] || "neutral";
+  return <Badge tone={tone} dot>{value}</Badge>;
+}
+
+function keepFocusInActiveDialog(event: KeyboardEvent) {
+  if (event.key !== "Tab") return;
+  const roots = [...document.querySelectorAll<HTMLElement>('[role="dialog"], .overlay .drawer, .modal-backdrop .modal')].filter(element => element.offsetParent !== null);
+  const root = roots.at(-1);
+  if (!root) return;
+  const focusable = [...root.querySelectorAll<HTMLElement>('button:not([disabled]), input:not([disabled]), textarea:not([disabled]), select:not([disabled]), [href], [tabindex]:not([tabindex="-1"])')].filter(element => element.offsetParent !== null);
+  if (!focusable.length) return;
+  const first = focusable[0];
+  const last = focusable.at(-1)!;
+  if (event.shiftKey && (document.activeElement === first || !root.contains(document.activeElement))) { event.preventDefault(); last.focus(); }
+  else if (!event.shiftKey && (document.activeElement === last || !root.contains(document.activeElement))) { event.preventDefault(); first.focus(); }
+}
+
+function focusActiveDialog() {
+  window.requestAnimationFrame(() => {
+    const roots = [...document.querySelectorAll<HTMLElement>('[role="dialog"], .overlay .drawer, .modal-backdrop .modal')].filter(element => element.offsetParent !== null);
+    roots.at(-1)?.querySelector<HTMLElement>('button:not([disabled]), input:not([disabled]), textarea:not([disabled]), select:not([disabled]), [href], [tabindex]:not([tabindex="-1"])')?.focus();
+  });
 }
 
 export default function Home() {
@@ -283,6 +305,7 @@ export default function Home() {
   const [bulkSettingsOpen, setBulkSettingsOpen] = useState(false);
   const [requestPriorityFilter, setRequestPriorityFilter] = useState<"全部" | "Urgent">("全部");
   const [toast, setToast] = useState("");
+  const [mobileNavOpen, setMobileNavOpen] = useState(false);
 
   const dateLabel = dateOffset === 0 ? "今天 · 8月18日 周二" : dateOffset === -1 ? "昨天 · 8月17日 周一" : "明天 · 8月19日 周三";
   const filteredRobots = useMemo(() => robotPool.slice(0, 10).filter(r =>
@@ -310,6 +333,7 @@ export default function Home() {
     const hasDialog = Boolean(selectedRobot || selectedExperiment || selectedManagerRequest || bulkSettingsOpen);
     if (!hasDialog) return;
     const onKeyDown = (event: KeyboardEvent) => {
+      keepFocusInActiveDialog(event);
       if (event.key !== "Escape") return;
       setSelectedRobot(null);
       setSelectedExperiment(null);
@@ -317,6 +341,7 @@ export default function Home() {
       setBulkSettingsOpen(false);
     };
     document.body.classList.add("modal-open");
+    focusActiveDialog();
     window.addEventListener("keydown", onKeyDown);
     return () => {
       document.body.classList.remove("modal-open");
@@ -501,19 +526,21 @@ export default function Home() {
   return (
     <div className="app-shell">
       <a className="skip-link" href="#main-content">跳到主要内容</a>
-      <aside className="sidebar">
-        <div className="brand"><span className="brand-mark">R</span><div><strong>RobotOps</strong><small>实验运营平台</small></div></div>
-        <nav className="console-nav" aria-label="角色控制台">{consoles.map(item => <button key={item.id} aria-current={activeConsole === item.id ? "page" : undefined} className={activeConsole === item.id ? "active" : ""} onClick={() => setActiveConsole(item.id)}><span className="nav-icon role-icon">{item.icon}</span><span className="nav-copy"><strong>{item.label}</strong><small>{item.hint}</small></span>{item.id === "manager" && managerAlertCount > 0 && <b aria-label={`${managerAlertCount} 个待处理事项`}>{managerAlertCount}</b>}</button>)}</nav>
-        <div className="sidebar-foot"><div className="workspace"><span>R</span><div><strong>机器人实验室</strong><small>生产环境</small></div></div></div>
+      {mobileNavOpen && <button className="mobile-nav-scrim" aria-label="关闭导航" onClick={() => setMobileNavOpen(false)} />}
+      <aside className={`sidebar ${mobileNavOpen ? "mobile-open" : ""}`} aria-label="主导航">
+        <div className="brand"><span className="brand-mark"><Bot aria-hidden="true" /></span><div><strong>RobotOps</strong><small>实验运营平台</small></div><IconButton className="mobile-nav-close" label="关闭导航" icon={<X aria-hidden="true" />} onClick={() => setMobileNavOpen(false)} /></div>
+        <nav className="console-nav" aria-label="角色控制台">{consoles.map(item => { const ConsoleIcon = item.icon; return <button key={item.id} aria-current={activeConsole === item.id ? "page" : undefined} className={activeConsole === item.id ? "active" : ""} onClick={() => { setActiveConsole(item.id); setMobileNavOpen(false); }}><span className="nav-icon role-icon"><ConsoleIcon aria-hidden="true" /></span><span className="nav-copy"><strong>{item.label}</strong><small>{item.hint}</small></span>{item.id === "manager" && managerAlertCount > 0 && <b aria-label={`${managerAlertCount} 个待处理事项`}>{managerAlertCount}</b>}</button>; })}</nav>
+        <div className="sidebar-foot"><div className="workspace"><span><Bot aria-hidden="true" /></span><div><strong>机器人实验室</strong><small>生产环境</small></div></div></div>
       </aside>
 
       <main id="main-content">
         <header className="topbar">
-          <div><h1>{consoleMeta[0]}</h1><p>{consoleMeta[1]}</p></div>
+          <IconButton className="mobile-nav-trigger" label="打开导航" icon={<Menu aria-hidden="true" />} onClick={() => setMobileNavOpen(true)} />
+          <div className="page-title"><h1>{consoleMeta[0]}</h1><p>{consoleMeta[1]}</p></div>
           <div className="top-actions">
-            <div className="date-picker"><button onClick={() => setDateOffset(-1)} aria-label="前一天">‹</button><span>▣&nbsp; {dateLabel}</span><button onClick={() => setDateOffset(1)} aria-label="后一天">›</button></div>
-            {dateOffset !== 0 && <button className="today" onClick={() => setDateOffset(0)}>回到今天</button>}
-            {activeConsole === "manager" && <label className="search">⌕<input aria-label="搜索 Robot、实验或 Tester" placeholder="搜索 Robot、实验、Tester..." value={search} onChange={e => setSearch(e.target.value)} /></label>}
+            <div className="date-picker"><IconButton label="前一天" icon={<ChevronLeft aria-hidden="true" />} onClick={() => setDateOffset(-1)} /><span><CalendarDays aria-hidden="true" />{dateLabel}</span><IconButton label="后一天" icon={<ChevronRight aria-hidden="true" />} onClick={() => setDateOffset(1)} /></div>
+            {dateOffset !== 0 && <Button variant="secondary" size="sm" onClick={() => setDateOffset(0)}>回到今天</Button>}
+            {activeConsole === "manager" && <label className="search"><Search aria-hidden="true" /><input aria-label="搜索 Robot、实验或 Tester" placeholder="搜索 Robot、实验、Tester..." value={search} onChange={e => setSearch(e.target.value)} /></label>}
             <span className="avatar" aria-label="当前用户 JC">JC</span>
           </div>
         </header>
@@ -521,7 +548,7 @@ export default function Home() {
         <div className="content">
           {activeConsole === "manager" ? <>
           <SharedFlow active="manager" requests={requests} onNavigate={setActiveConsole} />
-          <nav className="manager-subnav" aria-label="实验管理员页面"><button aria-current={managerPage === "operations" ? "page" : undefined} className={managerPage === "operations" ? "active" : ""} onClick={() => setManagerPage("operations")}><span>运</span><div><strong>运行与资源</strong><small>今日排期、Robot 与 Tester</small></div></button><button aria-current={managerPage === "requests" ? "page" : undefined} className={managerPage === "requests" ? "active" : ""} onClick={() => setManagerPage("requests")}><span>需</span><div><strong>实验需求管理</strong><small>{requests.length} 个需求及关联实验</small></div></button></nav>
+          <div className="manager-subnav"><Tabs label="实验管理员页面" value={managerPage} onValueChange={value => setManagerPage(value as "operations" | "requests")} items={[{ value: "operations", label: "运行与资源", icon: <Gauge aria-hidden="true" /> }, { value: "requests", label: `实验需求管理 · ${requests.length}`, icon: <ClipboardList aria-hidden="true" /> }]} /></div>
           <div className={`manager-console-page ${managerPage}`}>
           {managerPage === "requests" && <section className="manager-request-page-head"><div><span>EXPERIMENT REQUEST MANAGEMENT</span><h2>实验需求管理</h2><p>集中查看需求内容、自动创建的实验，以及每个实验对应的 Robot、Tester 和排期。</p></div><div><strong>{requests.length}</strong><span>全部需求</span></div><div><strong>{requests.reduce((sum, request) => sum + estimateRequestExperimentCount(request), 0)}</strong><span>关联实验</span></div></section>}
           <section className="readiness dispatch-readiness manager-day-summary">
@@ -529,10 +556,11 @@ export default function Home() {
             <button onClick={() => document.getElementById("attention")?.scrollIntoView({ behavior: "smooth" })}>查看需要处理 ↓</button>
           </section>
 
-          <section className="kpis">
-            {[
-              ["今日已排", dispatchStats.scheduled, `${dispatchStats.completed} 已完成 · ${dispatchStats.running} 进行中`, ""], ["Robot 可用", "8 / 10", "2 台暂不可使用", ""], ["Robot 利用率", `${dispatchStats.utilization}%`, `${dispatchStats.scheduled} / ${scheduleResources.robot.length * 16} 个实验容量`, "meter"], ["需要处理", dispatchStats.atRisk, "仅统计未匹配到 Tester 的实验", "alert"], ["待创建实验", dispatchStats.unassigned, "来自待审核实验需求", "alert"],
-            ].map(([label, value, sub, cls]) => <article className={`kpi ${cls}`} key={label}><div><span>{label}</span>{cls === "alert" && <em>!</em>}</div><strong>{value}</strong><p>{sub}</p>{cls === "meter" && <div className="mini-meter"><i style={{ width: `${dispatchStats.utilization}%` }} /></div>}</article>)}
+          <section className="kpis" aria-label="今日关键指标">
+            <MetricCard label="今日已排" value={dispatchStats.scheduled} description={`${dispatchStats.completed} 已完成 · ${dispatchStats.running} 进行中`} icon={<CalendarDays />} />
+            <MetricCard label="Robot 可用" value="8 / 10" description="2 台暂停或维护中" icon={<Bot />} tone="info" />
+            <MetricCard label="Robot 利用率" value={`${dispatchStats.utilization}%`} description={`${dispatchStats.scheduled} / ${scheduleResources.robot.length * 16} 个实验容量`} icon={<Gauge />} progress={dispatchStats.utilization} />
+            <MetricCard label="需要处理" value={dispatchStats.atRisk + dispatchStats.unassigned} description="Tester 未匹配或待创建实验" icon={<AlertTriangle />} tone={dispatchStats.atRisk + dispatchStats.unassigned ? "warning" : "success"} />
           </section>
 
           <div className="section-grid top-grid">
@@ -543,7 +571,7 @@ export default function Home() {
 
             <section className="panel attention" id="attention">
               <div className="section-head"><div><h2>需要人工处理</h2><p><b>{attention.length}</b> 个问题需要实验管理员确认</p></div></div>
-              <div className="issues">{attention.map(a => <article className="issue" key={a.kind}><span className={`issue-icon ${a.tone}`}>{a.icon}</span><div className="issue-body"><div><small>{a.kind}</small><em>需人工指定</em></div><strong>{a.title}</strong><p>{a.desc}</p><div className="issue-actions"><button className="primary-sm" onClick={() => { const slot = getDispatchSchedule(platformRobotNames[4], 0, robotPool, testerBreaks, robotBlocks)[15]; setSelectedExperiment(scheduleSlotToExperiment(slot, 15)); }}>{a.action}</button></div></div></article>)}</div>
+              <div className="issues">{attention.map(a => { const IssueIcon = a.icon; return <article className="issue" key={a.kind}><span className={`issue-icon ${a.tone}`}><IssueIcon aria-hidden="true" /></span><div className="issue-body"><div><small>{a.kind}</small><em>需人工指定</em></div><strong>{a.title}</strong><p>{a.desc}</p><div className="issue-actions"><Button size="sm" onClick={() => { const slot = getDispatchSchedule(platformRobotNames[4], 0, robotPool, testerBreaks, robotBlocks)[15]; setSelectedExperiment(scheduleSlotToExperiment(slot, 15)); }}>{a.action}</Button></div></div></article>; })}</div>
             </section>
           </div>
 
@@ -574,8 +602,8 @@ export default function Home() {
   );
 }
 
-function SharedStatus({ value }: { value: SharedRequest["status"] }) {
-  const cls = { "待审核": "amber", "已排期": "blue", "进行中": "green", "已完成": "gray", "冲突": "red" }[value];
+function SharedStatus({ value }: { value: string }) {
+  const cls = ({ "待审核": "amber", "已排期": "blue", "进行中": "green", "已完成": "gray", "冲突": "red" } as Record<string, string>)[value] || "gray";
   return <span className={`shared-status ${cls}`}><i />{value}</span>;
 }
 
@@ -594,7 +622,7 @@ function SharedFlow({ active, requests, onNavigate }: { active: ConsoleRole; req
     { role: "tester" as ConsoleRole, label: "实验员执行", detail: `${requests.filter(r => r.status === "进行中").length} 个进行中`, done: executing },
     { role: "requester" as ConsoleRole, label: "结果已同步", detail: `${requests.filter(r => r.status === "已完成").length} 个已完成`, done: completed },
   ];
-  return <section className="shared-flow"><div className="flow-title"><strong>实验协作流程</strong><span>三个控制台共享同一份实时数据</span></div><div className="flow-steps">{steps.map((step, i) => <button key={step.label} className={`${step.done ? "done" : ""} ${step.role === active ? "current" : ""}`} onClick={() => onNavigate(step.role)}><span>{step.done ? "✓" : i + 1}</span><div><strong>{step.label}</strong><small>{step.detail}</small></div>{i < steps.length - 1 && <em>→</em>}</button>)}</div></section>;
+  return <section className="shared-flow"><div className="flow-title"><strong>实验协作流程</strong><span>三个控制台共享同一份实时数据</span></div><div className="flow-steps">{steps.map((step, i) => <button key={step.label} className={`${step.done ? "done" : ""} ${step.role === active ? "current" : ""}`} onClick={() => onNavigate(step.role)}><span>{step.done ? <Check aria-hidden="true" /> : i + 1}</span><div><strong>{step.label}</strong><small>{step.detail}</small></div></button>)}</div></section>;
 }
 
 function RequesterConsole({ requests, setRequests, robotPool, robotBlocks, testerBreaks, onAutoSchedule, onNavigate }: { requests: SharedRequest[]; setRequests: Dispatch<SetStateAction<SharedRequest[]>>; robotPool: Robot[]; robotBlocks: Record<string, RobotBlock[]>; testerBreaks: TesterBreak[]; onAutoSchedule: (request: SharedRequest) => void; onNavigate: (role: ConsoleRole) => void }) {
@@ -631,12 +659,14 @@ function RequesterConsole({ requests, setRequests, robotPool, robotBlocks, teste
     const hasDialog = Boolean(formOpen || selectedRequest || selectedGanttExperiment);
     if (!hasDialog) return;
     const onKeyDown = (event: KeyboardEvent) => {
+      keepFocusInActiveDialog(event);
       if (event.key !== "Escape") return;
       setFormOpen(false);
       setSelectedRequestId(null);
       setSelectedGanttExperiment(null);
     };
     document.body.classList.add("modal-open");
+    focusActiveDialog();
     window.addEventListener("keydown", onKeyDown);
     return () => {
       document.body.classList.remove("modal-open");
@@ -686,9 +716,13 @@ function RequesterConsole({ requests, setRequests, robotPool, robotBlocks, teste
 
   return <div className="role-console requester-console" onClick={openRequesterGanttExperiment}>
     <SharedFlow active="requester" requests={requests} onNavigate={onNavigate} />
-    <section className="role-hero"><div><span className="eyebrow">EXPERIMENT REQUESTER</span><h2>我的实验需求</h2><p>先查看 Robot 可用时间，再提交 Policy 实验需求；排期变化会自动同步到这里。</p></div><button className="create-btn" onClick={() => setFormOpen(true)}>＋ 提交实验需求</button></section>
-    <section className="role-kpis">{[["全部需求",requests.length,"本周期"],["排期异常",counts.pending,"仅资源不足时出现"],["进行中",counts.running,"正在执行"],["已完成",counts.completed,"结果已同步"]].map(x => <article key={String(x[0])}><span>{x[0]}</span><strong>{x[1]}</strong><small>{x[2]}</small></article>)}</section>
-    <section className="requester-capacity-insights"><article><span>预计工作量</span><strong>{estimatedExperiments} Experiments</strong><small>约 {Math.round(estimatedExperiments * 0.5 * 10) / 10} 小时 Robot Capacity</small></article><article><span>今日可用 Capacity</span><strong>{availableCapacity} 个实验</strong><small>未来排程会随运行状态动态变化</small></article><article><span>最早预计开始</span><strong>今天 {slotTimeLabel(Number.isFinite(earliestAvailableIndex) ? earliestAvailableIndex : 0)}</strong><small>系统综合 Robot 与 Tester 可用时间</small></article><article className={counts.pending ? "risk" : ""}><span>排期异常</span><strong>{counts.pending ? `${counts.pending} 个待处理` : "暂无异常"}</strong><small>{counts.pending ? "系统暂未找到完整资源组合" : "所有需求均已自动排期"}</small></article></section>
+    <section className="role-hero"><div><span className="eyebrow">EXPERIMENT REQUESTER</span><h2>需求总览</h2><p>查看 Robot 可用时间、提交 Policy 实验需求并追踪自动排期进度。</p></div><Button size="lg" leadingIcon={<Plus aria-hidden="true" />} onClick={() => setFormOpen(true)}>提交实验需求</Button></section>
+    <section className="role-kpis" aria-label="需求关键指标">
+      <MetricCard label="全部需求" value={requests.length} description={`${estimatedExperiments} 个关联实验`} icon={<ClipboardList />} />
+      <MetricCard label="今日可用容量" value={availableCapacity} description="个 30 分钟实验时段" icon={<Bot />} tone="info" />
+      <MetricCard label="最早预计开始" value={`今天 ${slotTimeLabel(Number.isFinite(earliestAvailableIndex) ? earliestAvailableIndex : 0)}`} description="综合 Robot 与 Tester 可用时间" icon={<CalendarDays />} />
+      <MetricCard label="排期异常" value={counts.pending} description={counts.pending ? "系统暂未找到完整资源组合" : "当前需求均已自动排期"} icon={counts.pending ? <AlertTriangle /> : <CheckCircle2 />} tone={counts.pending ? "warning" : "success"} />
+    </section>
     <section className="panel my-requests requester-first"><div className="section-head"><div><h2>我的需求</h2><p>按需求追踪自动创建的实验与执行进度</p></div><div className="segmented" aria-label="按需求状态筛选">{(["全部", "待排期", "进行中"] as const).map(filter => <button key={filter} aria-pressed={requestFilter === filter} className={requestFilter === filter ? "active" : ""} onClick={() => setRequestFilter(filter)}>{filter}</button>)}</div></div><div className="table-scroll"><table className="request-summary-table"><thead><tr><th>需求 ID</th><th>需求描述</th><th>Policy</th><th>Robot</th><th>状态</th><th>操作</th></tr></thead><tbody>{filteredRequests.map(r => {
       const policies = r.policies?.length ? r.policies : [r.policy];
       const robotChoices = r.robotChoices?.length ? r.robotChoices : [r.robot];
@@ -779,7 +813,13 @@ function MultiSelectInput({ label, options, selected, onChange, placeholder, met
   const [query, setQuery] = useState("");
   const visible = options.filter(option => option.toLowerCase().includes(query.toLowerCase()));
   const toggle = (value: string) => onChange(selected.includes(value) ? selected.filter(item => item !== value) : [...selected, value]);
-  return <div className={`multi-select-input ${open ? "open" : ""}`}><button type="button" className="multi-select-trigger" aria-label={`${label}多选，已选择 ${selected.length} 项`} aria-haspopup="listbox" aria-expanded={open} onClick={() => setOpen(!open)}><div>{selected.length ? selected.map(value => <span className="selected-chip" key={value}>{value}<i aria-hidden="true">×</i></span>) : <span className="multi-placeholder">{placeholder}</span>}</div><b aria-hidden="true">⌄</b></button>{open && <div className="multi-select-menu"><label>⌕<input aria-label={`搜索${label}`} placeholder={`搜索${label}`} value={query} onChange={event => setQuery(event.target.value)} /></label><div role="listbox" aria-label={`${label}选项`} aria-multiselectable="true">{visible.map(value => <button type="button" role="option" aria-selected={selected.includes(value)} key={value} className={selected.includes(value) ? "selected" : ""} onClick={() => toggle(value)}><i>{selected.includes(value) ? "✓" : ""}</i><span>{value}</span>{meta && <small>{meta(value)}</small>}</button>)}</div>{!visible.length && <p>没有匹配结果</p>}</div>}</div>;
+  return <div className={`multi-select-input ${open ? "open" : ""}`}>
+    <button type="button" className="multi-select-trigger" aria-label={`${label}多选，已选择 ${selected.length} 项`} aria-haspopup="listbox" aria-expanded={open} onClick={() => setOpen(!open)}>
+      <div>{selected.length ? selected.map(value => <span className="selected-chip" key={value}>{value}<X aria-hidden="true" /></span>) : <span className="multi-placeholder">{placeholder}</span>}</div>
+      <ChevronDown aria-hidden="true" />
+    </button>
+    {open && <div className="multi-select-menu"><label><Search aria-hidden="true" /><input aria-label={`搜索${label}`} placeholder={`搜索${label}`} value={query} onChange={event => setQuery(event.target.value)} /></label><div role="listbox" aria-label={`${label}选项`} aria-multiselectable="true">{visible.map(value => <button type="button" role="option" aria-selected={selected.includes(value)} key={value} className={selected.includes(value) ? "selected" : ""} onClick={() => toggle(value)}><i>{selected.includes(value) && <Check aria-hidden="true" />}</i><span>{value}</span>{meta && <small>{meta(value)}</small>}</button>)}</div>{!visible.length && <p>没有匹配结果</p>}</div>}
+  </div>;
 }
 
 function ModernRequestModal({ requestCount, setRequests: _setRequests, robotPool, robotBlocks, testerBreaks, onAutoSchedule, onClose }: { requestCount: number; setRequests: React.Dispatch<React.SetStateAction<SharedRequest[]>>; robotPool: Robot[]; robotBlocks: Record<string, RobotBlock[]>; testerBreaks: TesterBreak[]; onAutoSchedule: (request: SharedRequest) => void; onClose: () => void }) {
@@ -812,7 +852,7 @@ function ModernRequestModal({ requestCount, setRequests: _setRequests, robotPool
     setTimeout(onClose, 700);
   }
   return <div className="modal-backdrop modern-request-backdrop"><form className={`modern-request-modal ${selectedRobots.length ? "calendar-open" : ""}`} role="dialog" aria-modal="true" aria-labelledby="new-request-title" onSubmit={submit}>
-    <header className="modern-request-head"><div className="modal-icon blue">需</div><div><h3 id="new-request-title">提交实验需求</h3><p>提交后系统将自动创建实验，并匹配 Robot、合格 Tester 与最近可用时间。</p></div><button type="button" aria-label="关闭" onClick={onClose}>×</button></header>
+    <header className="modern-request-head"><div className="modal-icon blue"><FlaskConical aria-hidden="true" /></div><div><h3 id="new-request-title">提交实验需求</h3><p>提交后系统将自动创建实验，并匹配 Robot、合格 Tester 与最近可用时间。</p></div><IconButton type="button" label="关闭" icon={<X aria-hidden="true" />} onClick={onClose} /></header>
     <div className="modern-request-body"><div className="modern-form-pane">
       <label className="modern-field"><span>需求描述 <b>*</b></span><textarea required placeholder="说明实验问题、成功标准和实验目标" value={description} onChange={event => setDescription(event.target.value)} /></label>
       <div className="modern-section"><div className="modern-label"><strong>Policy <b>*</b></strong><span>输入搜索 · 下拉多选</span></div><MultiSelectInput label="Policy" options={policyCatalog} selected={policies} onChange={setPolicies} placeholder="输入或选择 Policy" /></div>
@@ -823,8 +863,8 @@ function ModernRequestModal({ requestCount, setRequests: _setRequests, robotPool
       </div>
       <label className="modern-field compact"><span>优先级</span><select value={priority} onChange={event => setPriority(event.target.value as "高" | "普通")}><option value="普通">Normal（普通）</option><option value="高">Urgent（紧急）</option></select></label>
       <label className="modern-field note-field"><span>实验备注</span><textarea placeholder="独立填写补充要求、操作注意事项或验收说明（可选）" value={note} onChange={event => setNote(event.target.value)} /></label>
-    </div>{selectedRobots.length ? <MultiRobotSchedulePanel robots={selectedRobots} robotPool={robotPool} robotBlocks={robotBlocks} testerBreaks={testerBreaks} /> : <aside className="calendar-empty-side"><span>日</span><strong>选择机器人后查看排期</strong><p>右侧将并列显示所有已选机器人的当天排期，并可切换日期。</p></aside>}</div>
-    <footer className="modern-request-foot"><p>当前关系：物体{objectMode === "single" ? "分别使用" : "按组使用"}，背景{backgroundMode === "single" ? "分别使用" : "按组使用"}；系统会保持该关系自动创建并排期实验。</p><div><button type="button" onClick={onClose}>取消</button><button className="primary-submit" type="submit" disabled={!valid}>{submitted ? "✓ 已自动排期" : "提交并自动排期"}</button></div></footer>
+    </div>{selectedRobots.length ? <MultiRobotSchedulePanel robots={selectedRobots} robotPool={robotPool} robotBlocks={robotBlocks} testerBreaks={testerBreaks} /> : <aside className="calendar-empty-side"><span><CalendarDays aria-hidden="true" /></span><strong>选择机器人后查看排期</strong><p>右侧将并列显示所有已选机器人的当天排期，并可切换日期。</p></aside>}</div>
+    <footer className="modern-request-foot"><p>当前关系：物体{objectMode === "single" ? "分别使用" : "按组使用"}，背景{backgroundMode === "single" ? "分别使用" : "按组使用"}；系统会保持该关系自动创建并排期实验。</p><div><Button type="button" variant="secondary" onClick={onClose}>取消</Button><Button type="submit" loading={submitted} disabled={!valid}>{submitted ? "已自动排期" : "提交并自动排期"}</Button></div></footer>
   </form></div>;
 }
 
@@ -838,8 +878,8 @@ function MultiRobotSchedulePanel({ robots: selectedRobots, robotPool, robotBlock
   const days = ["8月18日 今天", "8月19日 明天", "8月20日 后天", "8月21日 周五", "8月24日 周一"];
   const schedules = selectedRobots.map(robotName => ({ robotName, robot: robotPool.find(item => item.name === robotName), slots: getDispatchSchedule(robotName, dayIndex, robotPool, testerBreaks, robotBlocks) }));
   return <aside className="robot-schedule-side multi-robot-schedule-side">
-    <header><button type="button" className="today-button" onClick={() => setDayIndex(0)}>今天</button><button type="button" disabled={dayIndex === 0} onClick={() => setDayIndex(index => Math.max(0, index - 1))}>‹</button><strong>{days[dayIndex]}</strong><button type="button" disabled={dayIndex === days.length - 1} onClick={() => setDayIndex(index => Math.min(days.length - 1, index + 1))}>›</button></header>
-    <div className="multi-calendar-scroll"><div className="multi-calendar" style={{ minWidth: `${62 + selectedRobots.length * 210}px` }}>
+    <header><button type="button" className="today-button" onClick={() => setDayIndex(0)}>今天</button><IconButton type="button" label="前一天" icon={<ChevronLeft aria-hidden="true" />} disabled={dayIndex === 0} onClick={() => setDayIndex(index => Math.max(0, index - 1))} /><strong>{days[dayIndex]}</strong><IconButton type="button" label="后一天" icon={<ChevronRight aria-hidden="true" />} disabled={dayIndex === days.length - 1} onClick={() => setDayIndex(index => Math.min(days.length - 1, index + 1))} /></header>
+    <div className="multi-calendar-scroll"><div className="multi-calendar" style={{ "--robot-count": selectedRobots.length } as React.CSSProperties}>
       <div className="multi-calendar-head"><span>GMT+8</span>{schedules.map(item => <div key={item.robotName}><strong>{item.robotName}</strong><small>{item.slots.filter(isBookedSlot).length}/16 已排 · {item.robot?.status}</small></div>)}</div>
       <div className="multi-robot-calendar-grid" style={{ gridTemplateColumns: `62px repeat(${selectedRobots.length}, minmax(210px, 1fr))` }}><div className="calendar-times">{Array.from({ length: 10 }, (_, index) => <span key={index} style={{ top: `${index * 60}px` }}>{10 + index}:00</span>)}</div>{schedules.map(item => <div className="calendar-track robot-calendar-column" key={item.robotName}><div className="calendar-lunch-block"><strong>默认休息</strong><span>12:00–13:00</span></div>{item.slots.map((slot, slotIndex) => ({ slot, slotIndex })).filter(entry => isBookedSlot(entry.slot)).map(({ slot, slotIndex }) => <button type="button" key={slot.id} className={`calendar-event batch-${slot.batchIndex} ${slot.status === "conflict" ? "conflict" : ""}`} style={{ top: `${slotStartMinutes(slotIndex) - 10 * 60 + 2}px`, height: "26px" }}><strong>{slot.id}</strong><span>{slot.experimentName} · {slot.tester}</span><span className="schedule-hover-card"><b>{slot.id} · {slot.experimentName}</b><em>{slot.requestId}</em><small>需求人：{slot.requester}</small><small>{slot.policy}</small><small>{slotTimeLabel(slotIndex)}–{formatMinutes(slotStartMinutes(slotIndex) + 30)}</small></span></button>)}{item.slots.map((slot, slotIndex) => ({ slot, slotIndex })).filter(entry => entry.slot.blocked && !entry.slot.constraint.includes("默认停用休息")).map(({ slot, slotIndex }) => <div className="calendar-custom-block" key={slot.id} style={{ top: `${slotStartMinutes(slotIndex) - 10 * 60}px` }}><strong>不可排</strong><span>{slot.constraint}</span></div>)}</div>)}</div>
     </div></div><footer><span><i />已占用</span><span><i />Hover 查看需求信息</span><b>已同时显示 {selectedRobots.length} 台 Robot</b></footer>
@@ -894,8 +934,12 @@ function TesterConsole({ workflowRequests, assignedExperiments, leaves, testerBr
 
   useEffect(() => {
     if (!leaveOpen) return;
-    const onKeyDown = (event: KeyboardEvent) => event.key === "Escape" && setLeaveOpen(false);
+    const onKeyDown = (event: KeyboardEvent) => {
+      keepFocusInActiveDialog(event);
+      if (event.key === "Escape") setLeaveOpen(false);
+    };
     document.body.classList.add("modal-open");
+    focusActiveDialog();
     window.addEventListener("keydown", onKeyDown);
     return () => {
       document.body.classList.remove("modal-open");
@@ -977,4 +1021,3 @@ function ExperimentDrawer({ experiment: e, onAssignTester }: { experiment: Exper
 function LegacyExperimentDrawer({ experiment: e, onSchedule }: { experiment: Experiment; onSchedule: () => void }) {
   return <><div className="drawer-kicker">实验详情</div><h2>{e.id}</h2><div className="drawer-title"><strong>{e.name}</strong><span className={`priority ${e.priority === "高" ? "high" : ""}`}>{e.priority}优先级</span></div><StatusBadge value={e.status} /><h3>实验配置</h3><dl className="details"><div><dt>Robot</dt><dd>{e.robot}</dd></div><div><dt>物体</dt><dd>{e.object}</dd></div><div><dt>背景</dt><dd>{e.background}</dd></div><div><dt>策略</dt><dd>{e.policy}</dd></div><div><dt>Tester</dt><dd>{e.tester}</dd></div><div><dt>预计时长</dt><dd>{e.duration}</dd></div><div><dt>排期</dt><dd>{e.schedule}</dd></div></dl><div className="drawer-note"><strong>排期检查</strong><p>{e.priority === "高" ? "高优先级实验。插入今日排期将影响后续实验，请先查看影响范围。" : "当前资源满足要求，可按计划执行。"}</p></div><button className="wide-primary" onClick={onSchedule}>{e.schedule === "尚未排期" ? "安排实验" : "调整排期"}</button></>;
 }
-

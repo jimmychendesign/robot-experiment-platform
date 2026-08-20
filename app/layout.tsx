@@ -1,20 +1,11 @@
 import type { Metadata } from "next";
-import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
-
-const geistSans = Geist({
-  variable: "--font-geist-sans",
-  subsets: ["latin"],
-});
-
-const geistMono = Geist_Mono({
-  variable: "--font-geist-mono",
-  subsets: ["latin"],
-});
+import "./design-system/axis.css";
+import "./design-system/platform.css";
 
 export const metadata: Metadata = {
   title: "RobotOps · 实验运营控制台",
-  description: "面向实验经理的 Robot 实验排期、容量和冲突管理控制台。",
+  description: "统一管理实验需求、Robot 排期、Tester 执行与资源可用性的实验运营平台。",
   icons: {
     icon: "/favicon.svg",
     shortcut: "/favicon.svg",
@@ -28,11 +19,7 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="zh-CN">
-      <body
-        className={`${geistSans.variable} ${geistMono.variable} antialiased`}
-      >
-        {children}
-      </body>
+      <body>{children}</body>
     </html>
   );
 }

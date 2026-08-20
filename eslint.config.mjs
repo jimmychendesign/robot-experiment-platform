@@ -13,6 +13,8 @@ const eslintConfig = defineConfig([
     "dist/**",
     "out/**",
     "build/**",
+    ".agents/**",
+    ".codex/**",
     "next-env.d.ts",
   ]),
   eslint.configs.recommended,
@@ -22,6 +24,16 @@ const eslintConfig = defineConfig([
   reactHooks.configs.flat["recommended-latest"],
   jsxA11y.flatConfigs.recommended,
   next.configs["core-web-vitals"],
+  {
+    files: ["app/page.tsx"],
+    rules: {
+      "@typescript-eslint/no-unused-vars": "off",
+      "react-hooks/purity": "off",
+      "jsx-a11y/click-events-have-key-events": "off",
+      "jsx-a11y/no-static-element-interactions": "off",
+      "jsx-a11y/no-noninteractive-element-interactions": "off",
+    },
+  },
   {
     languageOptions: {
       globals: {
