@@ -6,6 +6,10 @@ import "./design-system/platform.css";
 export const metadata: Metadata = {
   title: "RobotOps · 实验运营控制台",
   description: "统一管理实验需求、Robot 排期、Tester 执行与资源可用性的实验运营平台。",
+  themeColor: [
+    { media: "(prefers-color-scheme: light)", color: "#f8fafc" },
+    { media: "(prefers-color-scheme: dark)", color: "#020617" },
+  ],
   icons: {
     icon: "/favicon.svg",
     shortcut: "/favicon.svg",

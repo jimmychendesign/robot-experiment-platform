@@ -27,7 +27,7 @@ export function IconButton({ label, icon, variant = "tertiary", size = "md", ...
   return <Button className="icon-button" aria-label={label} title={label} variant={variant} size={size} {...props}>{icon}</Button>;
 }
 
-export type BadgeTone = "neutral" | "primary" | "info" | "success" | "warning" | "danger";
+export type BadgeTone = "neutral" | "primary" | "info" | "success" | "scheduled" | "warning" | "danger";
 export function Badge({ tone = "neutral", dot = false, icon, children, className = "" }: { tone?: BadgeTone; dot?: boolean; icon?: ReactNode; children: ReactNode; className?: string }) {
   return <span className={`axis-badge axis-badge--${tone} ${className}`}>{dot && <span className="status-dot" aria-hidden="true" />}{icon && <span className="axis-badge__icon" aria-hidden="true">{icon}</span>}{children}</span>;
 }
