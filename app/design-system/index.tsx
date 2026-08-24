@@ -32,9 +32,9 @@ export function Badge({ tone = "neutral", dot = false, icon, children, className
   return <span className={`axis-badge axis-badge--${tone} ${className}`}>{dot && <span className="status-dot" aria-hidden="true" />}{icon && <span className="axis-badge__icon" aria-hidden="true">{icon}</span>}{children}</span>;
 }
 
-export function Tabs({ items, value, onValueChange, label }: { items: { value: string; label: string; icon?: ReactNode }[]; value: string; onValueChange: (value: string) => void; label: string }) {
+export function Tabs({ items, value, onValueChange, label }: { items: { value: string; label: string; icon?: ReactNode; badge?: number; badgeLabel?: string }[]; value: string; onValueChange: (value: string) => void; label: string }) {
   return <TabsPrimitive.Root className="axis-tabs" value={value} onValueChange={onValueChange}>
-    <TabsPrimitive.List className="axis-tabs__list" aria-label={label}>{items.map(item => <TabsPrimitive.Trigger className="axis-tabs__trigger" value={item.value} key={item.value}>{item.icon}{item.label}</TabsPrimitive.Trigger>)}</TabsPrimitive.List>
+    <TabsPrimitive.List className="axis-tabs__list" aria-label={label}>{items.map(item => <TabsPrimitive.Trigger className="axis-tabs__trigger" value={item.value} key={item.value}>{item.icon}{item.label}{typeof item.badge === "number" && item.badge > 0 && <b className="axis-tabs__badge" aria-label={item.badgeLabel || `${item.badge} 个待处理事项`}>{item.badge}</b>}</TabsPrimitive.Trigger>)}</TabsPrimitive.List>
   </TabsPrimitive.Root>;
 }
 

@@ -38,3 +38,13 @@ yarn-error.log*
 /.wrangler/
 /outputs/
 /work/
+
+# Generated project deliverables (directory placeholders are tracked)
+/output/html/*
+!/output/html/.gitkeep
+/output/pdf/*
+!/output/pdf/.gitkeep
+/output/screenshots/*
+!/output/screenshots/.gitkeep
+/output/exports/*
+!/output/exports/.gitkeep

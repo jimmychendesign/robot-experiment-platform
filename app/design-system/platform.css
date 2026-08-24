@@ -78,6 +78,43 @@ p,dd,.description-cell{text-wrap:pretty}
 .toast svg{width:18px;height:18px;color:var(--success-base)}
 @media(forced-colors:active){.status-dot,.gantt-legend i,.legend i{forced-color-adjust:none}.request-slot-track button,.calendar-event{border:1px solid ButtonText}}
 
+.language-switcher{
+  display:inline-flex;
+  align-items:center;
+  gap:var(--space-1);
+  min-height:var(--space-10);
+  padding:var(--space-1);
+  border:1px solid var(--border-primary);
+  border-radius:var(--radius-sm);
+  background:var(--background-secondary);
+}
+.language-switcher>svg{
+  width:var(--space-4);
+  height:var(--space-4);
+  margin-inline:var(--space-1);
+  color:var(--text-secondary);
+}
+.language-switcher>button{
+  min-width:36px;
+  min-height:30px;
+  padding-inline:var(--space-2);
+  border:0;
+  border-radius:var(--radius-xs);
+  background:transparent;
+  color:var(--text-secondary);
+  font-size:var(--font-size-caption);
+  font-weight:600;
+  cursor:pointer;
+}
+.language-switcher>button:hover{background:var(--background-hover);color:var(--text-primary)}
+.language-switcher>button[aria-pressed="true"]{background:var(--text-primary);color:var(--text-on-color)}
+.language-switcher>button:focus-visible{outline:var(--focus-ring-width) solid var(--focus-ring);outline-offset:var(--focus-ring-offset)}
+
+@media(max-width:700px){
+  .language-switcher>svg{display:none}
+  .language-switcher>button{min-width:32px;padding-inline:var(--space-1)}
+}
+
 /* Visualize DS alignment: neutral CRM shell, compact data surfaces, semantic color only. */
 .app-shell,
 .app-shell>main{
@@ -942,6 +979,108 @@ p,dd,.description-cell{text-wrap:pretty}
   }
 }
 
+/* Pending manager work stays visible at the navigation level without making
+   the tab label itself depend on color. */
+.axis-tabs__badge{
+  min-width:var(--space-5);
+  height:var(--space-5);
+  padding-inline:var(--space-1);
+  display:inline-grid;
+  place-items:center;
+  border-radius:var(--radius-full);
+  background:var(--danger-base);
+  color:var(--text-on-color);
+  font-size:var(--font-size-caption);
+  font-weight:700;
+  font-variant-numeric:tabular-nums;
+  line-height:1;
+}
+
+.manager-subnav .axis-tabs__trigger{
+  gap:var(--space-2);
+}
+
+/* Leave review is a separate work queue, not part of the Gantt content. */
+.pending-leave-panel{
+  overflow:hidden;
+}
+
+.pending-leave-panel .section-head{
+  min-height:var(--space-16);
+}
+
+.pending-leave-panel .leave-approval-list{
+  padding:0;
+  border-top:1px solid var(--border-primary);
+  border-bottom:0;
+}
+
+.pending-leave-panel .leave-approval-list article{
+  min-height:var(--space-20);
+  padding:var(--space-3) var(--space-4);
+  display:grid;
+  grid-template-columns:minmax(0,1fr) auto auto;
+  align-items:center;
+  gap:var(--space-4);
+  border-bottom:1px solid var(--border-primary);
+}
+
+.pending-leave-panel .leave-approval-list article:last-child{
+  border-bottom:0;
+}
+
+.pending-leave-panel .leave-approval-copy{
+  min-width:0;
+  display:grid;
+  gap:var(--space-1);
+}
+
+.pending-leave-panel .leave-approval-copy strong{
+  color:var(--text-primary);
+  font-size:var(--font-size-body);
+}
+
+.pending-leave-panel .leave-approval-copy span,
+.pending-leave-panel .leave-approval-copy small{
+  color:var(--text-secondary);
+  font-size:var(--font-size-caption);
+  font-variant-numeric:tabular-nums;
+}
+
+.pending-leave-panel .approval-actions{
+  grid-column:auto;
+  display:flex;
+  justify-content:flex-end;
+  gap:var(--space-2);
+}
+
+.pending-leave-panel .approval-actions button{
+  min-height:var(--space-10);
+  padding-inline:var(--space-4);
+  border:1px solid var(--border-secondary);
+  border-radius:var(--radius-md);
+  background:var(--background-primary);
+  color:var(--text-primary);
+  font-size:var(--font-size-body);
+  font-weight:600;
+}
+
+.pending-leave-panel .approval-actions button.approve{
+  border-color:var(--primary-base);
+  background:var(--primary-base);
+  color:var(--text-on-color);
+}
+
+@media(max-width:840px){
+  .pending-leave-panel .leave-approval-list article{
+    grid-template-columns:minmax(0,1fr) auto;
+  }
+
+  .pending-leave-panel .approval-actions{
+    grid-column:1/-1;
+  }
+}
+
 /* Operational density pass: one grid contract for every schedule surface. */
 .console-nav button{
   height:calc(var(--space-12) + var(--space-2));
@@ -1174,6 +1313,129 @@ body{
 @media(max-width:560px){
   .requester-gantt{
     --schedule-resource-column:calc(var(--space-24) * 2 + var(--space-8));
+  }
+}
+
+/* Tester management: fixed approval rail beside the primary Gantt workspace. */
+.tester-management-page{
+  display:grid;
+  gap:var(--space-4);
+  min-width:0;
+}
+
+.tester-management-page>.tester-kpis{
+  margin-bottom:0;
+}
+
+.tester-management-page>.tester-workspace-row{
+  display:grid;
+  grid-template-columns:minmax(0,1fr) 320px;
+  grid-template-areas:"gantt approval";
+  gap:var(--space-4);
+  align-items:stretch;
+  min-width:0;
+}
+
+.tester-workspace-row>.tester-gantt,
+.tester-workspace-row>.pending-leave-panel{
+  min-width:0;
+  margin-bottom:0;
+}
+
+.tester-workspace-row>.tester-gantt{
+  grid-area:gantt;
+}
+
+.tester-workspace-row>.pending-leave-panel{
+  grid-area:approval;
+  height:100%;
+}
+
+.tester-workspace-row>.pending-leave-panel .section-head{
+  min-height:0;
+  align-items:flex-start;
+  flex-wrap:wrap;
+}
+
+.tester-workspace-row>.pending-leave-panel .section-head>.axis-badge{
+  flex:none;
+}
+
+.tester-workspace-row>.pending-leave-panel .leave-approval-list{
+  padding:var(--space-3) var(--space-4);
+  border-top:1px solid var(--border-primary);
+  border-bottom:0;
+}
+
+.tester-workspace-row>.pending-leave-panel .leave-approval-list article{
+  min-height:0;
+  padding:var(--space-4);
+  grid-template-columns:minmax(0,1fr) auto;
+  grid-template-areas:
+    "copy status"
+    "actions actions";
+  gap:var(--space-3);
+  align-items:start;
+  border:1px solid var(--border-primary);
+  border-radius:var(--radius-sm);
+  background:var(--background-primary);
+}
+
+.tester-workspace-row>.pending-leave-panel .leave-approval-copy{
+  grid-area:copy;
+  min-width:0;
+}
+
+.tester-workspace-row>.pending-leave-panel .leave-approval-status{
+  grid-area:status;
+  justify-self:end;
+}
+
+.tester-workspace-row>.pending-leave-panel .leave-approval-status .badge{
+  width:max-content;
+  white-space:nowrap;
+}
+
+.tester-workspace-row>.pending-leave-panel .leave-approval-copy span{
+  overflow-wrap:anywhere;
+}
+
+.tester-workspace-row>.pending-leave-panel .approval-actions{
+  grid-area:actions;
+  display:grid;
+  grid-template-columns:minmax(0,.8fr) minmax(0,1.4fr);
+  gap:var(--space-2);
+}
+
+.tester-workspace-row>.pending-leave-panel .approval-actions button{
+  width:100%;
+  min-height:36px;
+}
+
+.pending-leave-empty{
+  display:grid;
+  place-content:center;
+  gap:var(--space-1);
+  min-height:220px;
+  padding:var(--space-6);
+  color:var(--text-secondary);
+  text-align:center;
+}
+
+.pending-leave-empty strong{
+  color:var(--text-primary);
+}
+
+@media(max-width:1100px){
+  .tester-management-page>.tester-workspace-row{
+    grid-template-columns:minmax(0,1fr);
+    grid-template-areas:
+      "gantt"
+      "approval";
+  }
+
+  .tester-workspace-row>.pending-leave-panel{
+    height:auto;
   }
 }
 
@@ -2799,7 +3061,7 @@ body{
   font-size:var(--font-size-caption);
 }
 
-/* Visualize DS DESIGN.md — connected operational surfaces.
+/* Visualize DS docs/design.md — connected operational surfaces.
    Keep hierarchy in typography and dividers instead of repeated card shells. */
 .section-head h2{
   font-size:var(--font-size-heading-3);
@@ -3542,8 +3804,8 @@ body{
 }
 
 /* Keep the Live Queue proportional to its own timeline instead of stretching
-   to the availability card beside it. Empty half-hour rows preserve real
-   schedule gaps, while the card ends with the last scheduled task. */
+   to the availability card beside it. Empty half-hour rows preserve the full
+   workday and use the same height as scheduled rows. */
 .tester-grid{
   align-items:start;
 }
@@ -3551,7 +3813,7 @@ body{
   align-self:start;
 }
 .task-list article.empty{
-  min-height:var(--space-10);
+  min-height:60px;
 }
 .task-list article.empty .task-line{
   background:var(--border-secondary);
@@ -3582,4 +3844,108 @@ body{
   height:var(--space-4);
   color:var(--text-secondary);
   pointer-events:none;
+}
+.tester-gantt .request-robot-label > span {
+  border-radius: var(--radius-full);
+  background: var(--brand-subtle);
+  color: var(--brand-base);
+  font-size: var(--font-size-xs);
+}
+
+.tester-gantt .request-slot-track button em {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.availability-card .leave-list{
+  padding:0;
+}
+
+.availability-card .leave-record{
+  display:grid;
+  grid-template-columns:var(--space-10) minmax(0,1fr) auto;
+  align-items:center;
+  gap:var(--space-3);
+  min-height:var(--space-20);
+  padding:var(--space-4);
+  border-bottom:1px solid var(--border-primary);
+}
+
+.availability-card .leave-record:last-child{
+  border-bottom:0;
+}
+
+.availability-card .leave-record-icon{
+  width:var(--space-10);
+  height:var(--space-10);
+  display:grid;
+  place-items:center;
+  border-radius:var(--radius-md);
+  background:var(--warning-subtle);
+  color:var(--warning-base);
+  font-size:var(--font-size-caption);
+  font-weight:700;
+}
+
+.availability-card .leave-record-copy{
+  min-width:0;
+  display:grid;
+  gap:var(--space-1);
+}
+
+.availability-card .leave-record-copy strong{
+  overflow-wrap:anywhere;
+  font-family:var(--font-mono);
+  font-size:var(--font-size-caption);
+  font-variant-numeric:tabular-nums;
+  line-height:1.4;
+}
+
+.availability-card .leave-record-copy small{
+  color:var(--text-secondary);
+  font-size:var(--font-size-caption);
+}
+
+.availability-card .leave-record>.axis-badge{
+  justify-self:end;
+}
+
+.leave-form .modal-actions{
+  padding-top:var(--space-4);
+  border-top:1px solid var(--border-primary);
+}
+
+.leave-form .modal-actions .button{
+  min-width:var(--space-24);
+  min-height:44px;
+  font-size:var(--font-size-body);
+}
+
+.leave-form .modal-actions .button--secondary{
+  border-color:var(--border-secondary);
+  background:var(--background-primary);
+  color:var(--text-primary);
+}
+
+.leave-form .modal-actions .button--primary{
+  border-color:var(--primary-base);
+  background:var(--primary-base);
+  color:var(--text-on-color);
+}
+
+.leave-form .modal-actions .button--primary:hover{
+  border-color:var(--primary-hover);
+  background:var(--primary-hover);
+}
+
+@media(max-width:560px){
+  .availability-card .leave-record{
+    grid-template-columns:var(--space-10) minmax(0,1fr);
+  }
+
+  .availability-card .leave-record>.axis-badge{
+    grid-column:2;
+    justify-self:start;
+  }
 }

@@ -1,8 +1,9 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState, type Dispatch, type SetStateAction } from "react";
-import { AlertTriangle, ArrowLeft, Bot, CalendarDays, Check, CheckCircle2, ChevronDown, ChevronLeft, ChevronRight, ClipboardList, FlaskConical, Gauge, Menu, MoreHorizontal, Pause, Play, Plus, Search, Settings2, UserRound, UsersRound, Wrench, X, type LucideIcon } from "lucide-react";
+import { AlertTriangle, ArrowLeft, Bot, CalendarDays, Check, CheckCircle2, ChevronDown, ChevronLeft, ChevronRight, ClipboardList, FlaskConical, Gauge, Languages, Menu, MoreHorizontal, Pause, Play, Plus, Search, Settings2, UserRound, UsersRound, Wrench, X, type LucideIcon } from "lucide-react";
 import { Badge, Button, IconButton, MetricCard, Tabs, Tooltip } from "./design-system";
+import { useLocalizedDom, type Locale } from "./i18n";
 
 type Robot = {
   name: string; status: "运行中" | "空闲" | "已暂停" | "维护中"; tester: string;
@@ -298,6 +299,7 @@ function focusActiveDialog() {
 }
 
 export default function Home() {
+  const appRef = useRef<HTMLDivElement>(null);
   const dialogReturnFocusRef = useRef<HTMLElement | null>(null);
   const dialogWasOpenRef = useRef(false);
   const [activeConsole, setActiveConsole] = useState<ConsoleRole>("manager");
@@ -323,6 +325,21 @@ export default function Home() {
   const [requestPriorityFilter, setRequestPriorityFilter] = useState<"全部" | "紧急">("全部");
   const [toast, setToast] = useState("");
   const [mobileNavOpen, setMobileNavOpen] = useState(false);
+  const [locale, setLocale] = useState<Locale>("zh-CN");
+
+  useLocalizedDom(appRef, locale);
+
+  useEffect(() => {
+    const savedLocale = window.localStorage.getItem("robotops-locale");
+    if (savedLocale !== "en" && savedLocale !== "zh-CN") return;
+    const frame = window.requestAnimationFrame(() => setLocale(savedLocale));
+    return () => window.cancelAnimationFrame(frame);
+  }, []);
+
+  function changeLocale(nextLocale: Locale) {
+    setLocale(nextLocale);
+    window.localStorage.setItem("robotops-locale", nextLocale);
+  }
 
   const dateLabel = dateOffset === 0 ? "今天 · 8月18日 周二" : dateOffset === -1 ? "昨天 · 8月17日 周一" : "明天 · 8月19日 周三";
   const filteredRobots = useMemo(() => robotPool.slice(0, 10).filter(r =>
@@ -330,6 +347,21 @@ export default function Home() {
     (r.name.toLowerCase().includes(search.toLowerCase()) || r.tester.includes(search) || r.current.toLowerCase().includes(search.toLowerCase()))
   ), [search, statusFilter, robotPool]);
   const scheduleRows = useMemo(() => buildScheduleRows("robot", robotPool, testerBreaks, robotBlocks), [robotPool, testerBreaks, robotBlocks]);
+  const testerScheduleRows = useMemo(() => sharedTesterNames.slice(0, 5).map(tester => ({
+    name: tester,
+    initials: tester === "李莎" ? "LS" : tester === "吴明" ? "WM" : tester === "陈哲" ? "CZ" : tester === "周睿" ? "ZR" : tester === "赵静" ? "ZJ" : tester.slice(0, 1),
+    slots: Array.from({ length: 18 }, (_, slotIndex) => {
+      const sourceSlot = scheduleRows[0]?.slots[slotIndex];
+      const bookings = scheduleRows.flatMap(row => {
+        const slot = row.slots[slotIndex];
+        return isBookedSlot(slot) && slot.tester === tester ? [{ ...slot, robot: row.name }] : [];
+      });
+      if (bookings.length > 1) return { ...bookings[0], id: `tester-${tester}-${slotIndex}-conflict`, name: "排期冲突", sub: "排期冲突", policy: `${bookings.length} 个实验重叠`, robot: bookings.map(slot => slot.robot).join(" / "), constraint: "同一时间分配了多个实验", status: "conflict", available: false, blocked: false };
+      if (bookings.length === 1) return bookings[0];
+      if (sourceSlot?.blocked) return { ...sourceSlot, id: `tester-${tester}-${slotIndex}-break`, tester, robot: "—" };
+      return { ...sourceSlot, id: `tester-${tester}-${slotIndex}-available`, name: "可分配", sub: "可分配", experimentName: "—", policy: "—", tester, robot: "—", requestId: "—", requester: "—", available: true, blocked: false, constraint: "", status: "available" };
+    }),
+  })), [scheduleRows]);
   const selectedManagerRequest = requests.find(request => request.id === selectedManagerRequestId) || null;
   const filteredManagerRequests = useMemo(() => requestPriorityFilter === "紧急" ? requests.filter(request => request.priority === "高") : requests, [requestPriorityFilter, requests]);
   const dispatchStats = useMemo(() => {
@@ -341,7 +373,9 @@ export default function Home() {
     const unassigned = requests.filter(request => request.status === "待审核").reduce((sum, request) => sum + (request.combinationCount || 1), 0);
     return { scheduled, completed, running, atRisk, unassigned, utilization: Math.round(scheduled / (scheduleResources.robot.length * 16) * 100) };
   }, [requests, robotPool, testerBreaks, robotBlocks]);
-  const managerAlertCount = requests.filter(request => request.status === "待审核" || request.status === "冲突").length + leaves.filter(leave => leave.status === "待审批").length;
+  const pendingLeaveCount = leaves.filter(leave => leave.status === "待审批").length;
+  const operationsAttentionCount = attention.length;
+  const managerAlertCount = requests.filter(request => request.status === "待审核" || request.status === "冲突").length + pendingLeaveCount;
   const globalBreakMinutes = Math.max(0, timeValueMinutes(globalRobotConfig.breakEnd) - timeValueMinutes(globalRobotConfig.breakStart));
   const globalWorkMinutes = Math.max(0, timeValueMinutes(globalRobotConfig.workEnd) - timeValueMinutes(globalRobotConfig.workStart));
   const calculatedDailyLimit = Math.max(1, Math.floor((globalWorkMinutes - globalBreakMinutes) / globalRobotConfig.averageDuration));
@@ -556,7 +590,7 @@ export default function Home() {
   function done(message: string) { setToast(message); setTimeout(() => setToast(""), 2600); }
 
   return (
-    <div className="app-shell">
+    <div className="app-shell" ref={appRef}>
       <a className="skip-link" href="#main-content">跳到主要内容</a>
       {mobileNavOpen && <button className="mobile-nav-scrim" aria-label="关闭导航" onClick={() => setMobileNavOpen(false)} />}
       <aside className={`sidebar ${mobileNavOpen ? "mobile-open" : ""}`} aria-label="主导航">
@@ -569,6 +603,11 @@ export default function Home() {
           <IconButton className="mobile-nav-trigger" label="打开导航" icon={<Menu aria-hidden="true" />} onClick={() => setMobileNavOpen(true)} />
           <div className="page-title"><h1>{consoleMeta[0]}</h1><p>{consoleMeta[1]}</p></div>
           <div className="top-actions">
+            <div className="language-switcher" role="group" aria-label={locale === "zh-CN" ? "界面语言" : "Interface language"} data-i18n-ignore>
+              <Languages aria-hidden="true" />
+              <button type="button" aria-pressed={locale === "zh-CN"} onClick={() => changeLocale("zh-CN")}>{locale === "zh-CN" ? "中文" : "ZH"}</button>
+              <button type="button" aria-pressed={locale === "en"} onClick={() => changeLocale("en")}>EN</button>
+            </div>
             <div className="date-picker"><IconButton label="前一天" icon={<ChevronLeft aria-hidden="true" />} onClick={() => setDateOffset(-1)} /><span><CalendarDays aria-hidden="true" />{dateLabel}</span><IconButton label="后一天" icon={<ChevronRight aria-hidden="true" />} onClick={() => setDateOffset(1)} /></div>
             {dateOffset !== 0 && <Button variant="secondary" size="sm" onClick={() => setDateOffset(0)}>回到今天</Button>}
             {activeConsole === "manager" && <label className="search"><Search aria-hidden="true" /><input name="manager-search" autoComplete="off" aria-label="搜索 Robot、实验或 Tester" placeholder="搜索 Robot、实验、Tester…" value={search} onChange={e => setSearch(e.target.value)} /></label>}
@@ -578,7 +617,7 @@ export default function Home() {
 
         <div className="content">
           {activeConsole === "manager" ? <>
-          <div className="manager-subnav"><Tabs label="实验管理员页面" value={managerPage} onValueChange={value => setManagerPage(value as "operations" | "requests" | "testers")} items={[{ value: "operations", label: "运行与资源", icon: <Gauge aria-hidden="true" /> }, { value: "requests", label: `实验需求管理 · ${requests.length}`, icon: <ClipboardList aria-hidden="true" /> }, { value: "testers", label: "实验员管理", icon: <UsersRound aria-hidden="true" /> }]} /></div>
+          <div className="manager-subnav"><Tabs label="实验管理员页面" value={managerPage} onValueChange={value => setManagerPage(value as "operations" | "requests" | "testers")} items={[{ value: "operations", label: "运行与资源", icon: <Gauge aria-hidden="true" />, badge: operationsAttentionCount, badgeLabel: `${operationsAttentionCount} 个运行与资源待处理事项` }, { value: "requests", label: `实验需求管理 · ${requests.length}`, icon: <ClipboardList aria-hidden="true" /> }, { value: "testers", label: "实验员管理", icon: <UsersRound aria-hidden="true" />, badge: pendingLeaveCount, badgeLabel: `${pendingLeaveCount} 个待审批请假` }]} /></div>
           <div className={`manager-console-page ${managerPage}`}>
           {managerPage === "requests" && <section className="manager-request-page-head"><div><span>EXPERIMENT REQUEST MANAGEMENT</span><h2>实验需求管理</h2><p>集中查看需求内容、自动创建的实验，以及每个实验对应的 Robot、Tester 和排期。</p></div><div><strong>{requests.length}</strong><span>全部需求</span></div><div><strong>{requests.reduce((sum, request) => sum + estimateRequestExperimentCount(request), 0)}</strong><span>关联实验</span></div></section>}
           {managerPage === "operations" && <section className="attention-overview" id="attention" aria-label="需要人工处理">
@@ -603,25 +642,30 @@ export default function Home() {
           </section>
 
           <div className="section-grid lower-grid">
-            <section className="panel queue-panel manager-request-queue"><div className="section-head"><div><h2>实验需求队列</h2><p>需求提交后系统自动创建实验与排期；管理员在此查看需求及关联实验。</p></div><div className="segmented" aria-label="按优先级筛选"><button aria-pressed={requestPriorityFilter === "全部"} className={requestPriorityFilter === "全部" ? "active" : ""} onClick={() => setRequestPriorityFilter("全部")}>全部</button><button aria-pressed={requestPriorityFilter === "紧急"} className={requestPriorityFilter === "紧急" ? "active" : ""} onClick={() => setRequestPriorityFilter("紧急")}>紧急</button></div></div><div className="table-scroll"><table className="request-queue-table"><thead><tr><th>优先级</th><th>需求 ID</th><th>需求描述</th><th>Policy</th><th>Robot</th><th>申请人</th><th>Deadline</th><th>状态</th><th>操作</th></tr></thead><tbody>{filteredManagerRequests.map(r => {
+            <section className="panel queue-panel manager-request-queue"><div className="section-head"><div><h2>实验需求队列</h2><p>需求提交后系统自动创建实验与排期；管理员在此查看需求及关联实验。</p></div><div className="segmented" aria-label="按优先级筛选"><button aria-pressed={requestPriorityFilter === "全部"} className={requestPriorityFilter === "全部" ? "active" : ""} onClick={() => setRequestPriorityFilter("全部")}>全部</button><button aria-pressed={requestPriorityFilter === "紧急"} className={requestPriorityFilter === "紧急" ? "active" : ""} onClick={() => setRequestPriorityFilter("紧急")}>紧急</button></div></div><div className="table-scroll"><table className="request-queue-table"><thead><tr><th>优先级</th><th>需求 ID</th><th>需求描述</th><th>Policy</th><th>Robot</th><th>申请人</th><th>状态</th><th>操作</th></tr></thead><tbody>{filteredManagerRequests.map(r => {
               const policies = r.policies?.length ? r.policies : [r.policy];
               const robotChoices = r.robotChoices?.length ? r.robotChoices : [r.robot];
-              return <tr key={r.id}><td><span className={`priority ${r.priority === "高" ? "high" : ""}`}>{r.priority === "高" ? "紧急" : "普通"}</span></td><td><strong className="req-id">{r.id}</strong></td><td className="description-cell"><span className="description-clamp" title={r.description || r.note || "验证 Policy 在目标场景中的执行稳定性。"}>{r.description || r.note || "验证 Policy 在目标场景中的执行稳定性。"}</span></td><td><div className="table-chip-list">{policies.map(policy => <span className="table-chip policy" key={policy}>{policy}</span>)}</div></td><td><div className="table-chip-list robots">{robotChoices.map(robot => <span className="table-chip robot" key={robot}>{robot}</span>)}</div></td><td>{r.requester}</td><td>{r.expectedDate}</td><td><SharedStatus value={r.status} /></td><td><div className="manager-request-actions"><button className="view-request-btn" onClick={() => setSelectedManagerRequestId(r.id)}>查看需求与实验</button></div></td></tr>;
+              return <tr key={r.id}><td><span className={`priority ${r.priority === "高" ? "high" : ""}`}>{r.priority === "高" ? "紧急" : "普通"}</span></td><td><strong className="req-id">{r.id}</strong></td><td className="description-cell"><span className="description-clamp" title={r.description || r.note || "验证 Policy 在目标场景中的执行稳定性。"}>{r.description || r.note || "验证 Policy 在目标场景中的执行稳定性。"}</span></td><td><div className="table-chip-list">{policies.map(policy => <span className="table-chip policy" key={policy}>{policy}</span>)}</div></td><td><div className="table-chip-list robots">{robotChoices.map(robot => <span className="table-chip robot" key={robot}>{robot}</span>)}</div></td><td>{r.requester}</td><td><SharedStatus value={r.status} /></td><td><div className="manager-request-actions"><button className="view-request-btn" onClick={() => setSelectedManagerRequestId(r.id)}>查看需求与实验</button></div></td></tr>;
             })}</tbody></table></div></section>
           </div>
           <div className="tester-management-page">
             <section className="tester-kpis kpis" aria-label="实验员关键指标">
               <MetricCard label="当前可用" value={12 - testerBreaks.filter(item => item.active).length} description="可接受新实验分配" icon={<UsersRound />} tone="success" />
-              <MetricCard label="待审批请假" value={leaves.filter(leave => leave.status === "待审批").length} description="需要管理员处理" icon={<CalendarDays />} tone={leaves.some(leave => leave.status === "待审批") ? "warning" : undefined} />
+              <MetricCard label="待审批请假" value={pendingLeaveCount} description="需要管理员处理" icon={<CalendarDays />} tone={pendingLeaveCount ? "warning" : undefined} />
               <MetricCard label="临时 Break" value={testerBreaks.filter(item => item.active).length} description="排期正在实时校准" icon={<Pause />} tone={testerBreaks.some(item => item.active) ? "warning" : undefined} />
             </section>
-            <section className="panel testers tester-directory"><div className="section-head"><div><h2>实验员管理</h2><p>{leaves.filter(leave => leave.status === "待审批").length} 个请假申请待处理 · Break 独立计时并实时校准排期</p></div><button className="quiet">管理 Tester</button></div>{leaves.length > 0 && <div className="leave-approval-list">{leaves.map(leave => <article key={leave.id}><div><strong>{leave.tester} · 请假申请</strong><span>{leave.start.replace("T", " ")} → {leave.end.replace("T", " ")}</span><small>{leave.reason}</small></div><SharedLeaveStatus value={leave.status} />{leave.status === "待审批" && <div className="approval-actions"><button onClick={() => reviewLeave(leave.id, false)}>拒绝</button><button className="approve" onClick={() => reviewLeave(leave.id, true)}>批准并自动调度</button></div>}</article>)}</div>}{testerBreaks.some(item => item.active) && <div className="active-break-list">{testerBreaks.filter(item => item.active).map(item => <div key={item.id}><span>Break</span><div><strong>{item.tester} 临时休息计时中</strong><small>开始 {item.start} · 后续 Queue 正在动态顺延，结束后固化新时间</small></div></div>)}</div>}<div className="table-scroll"><table className="tester-table"><thead><tr><th>实验员</th><th>状态</th><th>当前 Robot</th><th>今日排期</th><th>下次可分配</th><th>操作</th></tr></thead><tbody>{[
-              { initials: "LS", name: "李莎", status: testerBreaks.some(item => item.active && item.tester === "李莎") ? "Break" : "可用", robot: platformRobotNames[1], schedule: "12 / 16", next: "今天 17:00" },
-              { initials: "WM", name: "吴明", status: "已分配", robot: platformRobotNames[3], schedule: "12 / 16", next: "今天 17:00" },
-              { initials: "CZ", name: "陈哲", status: "可用", robot: platformRobotNames[0], schedule: "15 / 16", next: "今天 18:30" },
-              { initials: "ZR", name: "周睿", status: "可用", robot: "—", schedule: "0 / 16", next: "现在" },
-              { initials: "ZJ", name: "赵静", status: "满负荷", robot: platformRobotNames[7], schedule: "16 / 16", next: "明天 10:00" },
-            ].map(tester => <tr key={tester.name}><td><div className="tester-identity"><span>{tester.initials}</span><strong>{tester.name}</strong></div></td><td><StatusBadge value={tester.status} /></td><td><span className="tester-robot-name">{tester.robot}</span></td><td><span className="tabular">{tester.schedule}</span></td><td>{tester.next}</td><td><button className="view-request-btn">查看详情 <ChevronRight aria-hidden="true" /></button></td></tr>)}</tbody></table></div></section>
+            <div className="tester-workspace-row">
+            <section className="panel schedule-panel requester-gantt manager-gantt tester-gantt">
+              <div className="section-head"><div><h2>今日实验员排期</h2><p>按实验员查看实验、Robot 与可分配时段；Break 和请假审批会实时校准排期。</p></div><div className="schedule-controls"><div className="legend"><span><i className="done" />已完成</span><span><i className="progress" />进行中</span><span><i className="scheduled" />待执行</span><span><i className="conflict" />需处理</span><span><i className="available" />可分配</span></div></div></div>
+              {testerBreaks.some(item => item.active) && <div className="active-break-list">{testerBreaks.filter(item => item.active).map(item => <div key={item.id}><span>Break</span><div><strong>{item.tester} 临时休息计时中</strong><small>开始 {item.start} · 后续 Queue 正在动态顺延，结束后固化新时间</small></div></div>)}</div>}
+              <div className="plan-constraint-note"><strong>今日排期 · 10:00–19:00</strong><span>每格 {globalRobotConfig.averageDuration} 分钟；同一时段多重分配会标记为需处理。</span></div>
+              <div className="request-gantt-body"><div className="request-gantt-head"><span>TESTER / {calculatedDailyLimit} EXP CAPACITY</span><ScheduleTimeAxis /></div>{testerScheduleRows.map(row => <div className="request-gantt-row" key={row.name}><div className="request-robot-label"><span>{row.initials}</span><div><strong>{row.name}</strong><small>{row.slots.filter(isBookedSlot).length}/{calculatedDailyLimit} 已排 · {testerBreaks.some(item => item.active && item.tester === row.name) ? "Break" : row.slots.some(slot => slot.status === "conflict") ? "需处理" : "可分配"}</small></div></div><div className="request-slot-track">{row.slots.map((slot, i) => <button key={slot.id} title={`${slotTimeLabel(i)} · ${slot.sub} · ${slot.policy} · ${slot.robot}${slot.constraint ? ` · ${slot.constraint}` : ""}`} className={`${slot.status} ${slot.blocked ? "blocked" : ""}`} onClick={() => slot.available || slot.blocked ? undefined : setSelectedExperiment(scheduleSlotToExperiment(slot, i))}><span>{slot.sub}</span><small>{slot.available ? slotTimeLabel(i) : slot.policy.replace(" Policy", "")}</small><em>{slot.available ? `约 ${globalRobotConfig.averageDuration} 分钟` : slot.robot}</em></button>)}</div></div>)}</div>
+            </section>
+            <section className="panel pending-leave-panel" aria-labelledby="pending-leave-title">
+              <div className="section-head"><div><h2 id="pending-leave-title">待处理请假申请</h2><p>审批后系统会自动改派 Tester，并重新校准实验排期。</p></div><Badge tone={pendingLeaveCount ? "warning" : "neutral"} dot={pendingLeaveCount > 0}>{pendingLeaveCount ? `${pendingLeaveCount} 个待审批` : "暂无待审批"}</Badge></div>
+              {pendingLeaveCount > 0 ? <div className="leave-approval-list">{leaves.filter(leave => leave.status === "待审批").map(leave => <article key={leave.id}><div className="leave-approval-copy"><strong>{leave.tester} · 请假申请</strong><span>{leave.start.replace("T", " ")} → {leave.end.replace("T", " ")}</span><small>{leave.reason}</small></div><div className="leave-approval-status"><SharedLeaveStatus value={leave.status} /></div><div className="approval-actions"><button onClick={() => reviewLeave(leave.id, false)}>拒绝</button><button className="approve" onClick={() => reviewLeave(leave.id, true)}>批准并自动调度</button></div></article>)}</div> : <div className="pending-leave-empty" role="status"><strong>暂无待处理申请</strong><span>新的请假申请会显示在这里。</span></div>}
+            </section>
+            </div>
           </div>
           </div>
           </> : activeConsole === "requester" ? <RequesterConsole requests={requests} setRequests={setRequests} robotPool={robotPool} robotBlocks={robotBlocks} testerBreaks={testerBreaks} onAutoSchedule={autoCreateAndScheduleRequest} /> : <TesterConsole assignedExperiments={assignedExperiments} leaves={leaves} testerBreaks={testerBreaks} runningTimers={runningTimers} addLeave={addLeave} startExperiment={startExperiment} finishExperiment={finishExperiment} startBreak={startTesterBreak} endBreak={endTesterBreak} />}
@@ -998,8 +1042,7 @@ function TesterConsole({ assignedExperiments, leaves, testerBreaks, runningTimer
     const match = task.time.match(/(\d{1,2}):(\d{2})/);
     return { ...task, startMinutes: match ? Number(match[1]) * 60 + Number(match[2]) : 10 * 60 };
   }).sort((a, b) => a.startMinutes - b.startMinutes);
-  const queueEndMinutes = Math.max(10 * 60, ...queueTasks.map(task => task.startMinutes));
-  const queueRows = Array.from({ length: Math.floor((queueEndMinutes - 10 * 60) / 30) + 1 }, (_, index) => {
+  const queueRows = Array.from({ length: (19 * 60 - 10 * 60) / 30 }, (_, index) => {
     const startMinutes = 10 * 60 + index * 30;
     return {
       startMinutes,
@@ -1035,8 +1078,8 @@ function TesterConsole({ assignedExperiments, leaves, testerBreaks, runningTimer
     <section className="tester-hero"><div className="tester-intro"><span className="avatar-lg">LS</span><div><span className="eyebrow">TESTER · 李莎</span><h2>下午好，李莎</h2><p>今天最多 16 个实验容量 · 10:00–19:00 · 12:00–13:00 默认休息</p></div></div><div className="tester-hero-actions"><div className="break-status-group"><span className={`availability-pill ${activeBreak || leaves.some(item => item.status === "已批准") ? "leave" : ""}`}><i />{activeBreak ? "Break 中" : leaves.some(item => item.status === "已批准") ? "请假已批准" : "今日可用"}</span>{activeBreak && <strong className="hero-break-timer">{breakElapsedLabel}</strong>}</div><button className="create-btn secondary" onClick={() => activeBreak ? endBreak("李莎") : startBreak("李莎")}>{activeBreak ? "结束临时休息" : "临时休息 Break"}</button><button className="create-btn secondary" onClick={() => setLeaveOpen(true)}>＋ 请假申请</button></div></section>
     {activeTask && <section className="current-task"><div className="live-mark"><i />{activeTask.status === "进行中" ? "正在执行" : "下一项实验"}</div><div className="current-main"><div><span>{activeBreak && activeTask.status === "冲突" ? shiftScheduledTime(activeTask.schedule, calibratedDelayMinutes) : activeTask.schedule}</span><h2>{activeTask.name}</h2><p>{activeTask.id} · {activeTask.policy}</p></div><div className="task-resource"><small>{activeTask.status === "进行中" ? "已运行时间" : activeBreak ? "动态校准后" : "执行资源"}</small><strong className={activeTask.status === "进行中" ? "running-timer" : ""}>{activeTask.status === "进行中" ? elapsedLabel : activeTask.robot}</strong><span>{activeTask.status === "进行中" ? "计时从点击开始实验后启动" : activeBreak ? `预计顺延 ${calibratedDelayMinutes} 分钟` : "预计约 30 分钟"}</span></div></div><div className="task-actions">{activeTask.status !== "进行中" ? <button onClick={() => startExperiment(activeTask.id)} disabled={Boolean(activeBreak)}>开始实验并计时</button> : <button className="complete" onClick={() => finishExperiment(activeTask.id)}>结束实验</button>}</div></section>}
     <div className="tester-grid"><section className="panel my-schedule"><div className="section-head"><div><h2>我的 Live Queue</h2><p>仅展示管理员创建并分配给李莎的 EXP 实验 · 排期随资源状态动态更新</p></div><button className="quiet">今天 · 8月18日</button></div><div className="task-list">{queueRows.map(row => row.task ? <article key={row.task.id} className={row.task.conflicted ? "conflicted" : ""}><time>{row.task.time}</time><span className={`task-line ${row.task.status === "已完成" ? "done" : row.task.status === "进行中" ? "live" : ""}`} /><div><strong>{row.task.name}</strong><small>{row.task.id} · {row.task.policy}{activeBreak && row.task.conflicted ? " · 动态校准中" : ""}</small></div><b>{row.task.robot}</b><SharedStatus value={row.task.status} /></article> : <article className="empty" key={`empty-${row.startMinutes}`} aria-label={`${row.time} 无实验安排`}><time>{row.time}</time><span className="task-line" /><div aria-hidden="true" /><b aria-hidden="true" /></article>)}</div></section>
-    <section className="panel availability-card"><div className="section-head"><div><h2>我的可用时间</h2><p>请假需要管理员审批；Break 立即生效</p></div><button className="quiet" onClick={() => setLeaveOpen(true)}>请假申请</button></div><div className="availability-summary"><span className={leaves.length || activeBreak ? "leave" : "available"}><i />{activeBreak ? "临时 Break 中" : leaves.some(item => item.status === "待审批") ? "请假等待审批" : "未来 7 天可用"}</span><strong>{leaves.length}</strong><small>条请假申请记录</small></div><div className="leave-list">{leaves.length ? leaves.map(l => <article key={l.id}><span>假</span><div><strong>{l.start.replace("T"," ")} → {l.end.replace("T"," ")}</strong><small>{l.reason}</small></div><SharedLeaveStatus value={l.status} /></article>) : <div className="empty-leave"><span>✓</span><strong>暂无请假安排</strong><p>你的实验任务可正常分配</p></div>}</div></section></div>
-    {leaveOpen && <div className="modal-backdrop"><form className="modal leave-form" role="dialog" aria-modal="true" aria-labelledby="leave-title" aria-describedby="leave-description" onSubmit={saveLeave}><div className="modal-icon amber"><CalendarDays aria-hidden="true" /></div><h3 id="leave-title">提交请假申请</h3><p id="leave-description">申请提交后由实验管理员审批；批准时系统会自动改派 Tester 并重新计算实验安排。</p><div className="form-grid"><label className="wide"><span>开始时间</span><input name="leave-start" autoComplete="off" type="datetime-local" value={leave.start} onChange={e => setLeave({...leave,start:e.target.value})} /></label><label className="wide"><span>结束时间</span><input name="leave-end" autoComplete="off" type="datetime-local" value={leave.end} onChange={e => setLeave({...leave,end:e.target.value})} /></label><label className="wide"><span>原因</span><input name="leave-reason" autoComplete="off" placeholder="例如：个人事务…" value={leave.reason} onChange={e => setLeave({...leave,reason:e.target.value})} /></label></div><div className="leave-warning"><strong>审批后联动</strong><span>{myTasks.filter(t => t.status === "已排期").length} 个已排期实验可能受影响；管理员批准后系统自动生成并应用调整方案。</span></div><div className="modal-actions"><Button type="button" variant="secondary" onClick={() => setLeaveOpen(false)}>取消</Button><Button type="submit">提交审批</Button></div></form></div>}
+    <section className="panel availability-card"><div className="section-head"><div><h2>我的可用时间</h2><p>请假需要管理员审批；Break 立即生效</p></div></div><div className="availability-summary">{(activeBreak || leaves.some(item => item.status === "待审批")) && <span className="leave"><i />{activeBreak ? "临时 Break 中" : "请假等待审批"}</span>}<strong>{leaves.length}</strong><small>条请假申请记录</small></div><div className="leave-list">{leaves.length ? leaves.map(l => <article className="leave-record" key={l.id}><span className="leave-record-icon" aria-hidden="true">假</span><div className="leave-record-copy"><strong>{l.start.replace("T"," ")} → {l.end.replace("T"," ")}</strong><small>{l.reason}</small></div><SharedLeaveStatus value={l.status} /></article>) : <div className="empty-leave"><span>✓</span><strong>暂无请假安排</strong><p>你的实验任务可正常分配</p></div>}</div></section></div>
+    {leaveOpen && <div className="modal-backdrop"><form className="modal leave-form" role="dialog" aria-modal="true" aria-labelledby="leave-title" aria-describedby="leave-description" onSubmit={saveLeave}><div className="modal-icon amber"><CalendarDays aria-hidden="true" /></div><h3 id="leave-title">提交请假申请</h3><p id="leave-description">申请提交后由实验管理员审批；批准时系统会自动改派 Tester 并重新计算实验安排。</p><div className="form-grid"><label className="wide"><span>开始时间</span><input name="leave-start" autoComplete="off" type="datetime-local" value={leave.start} onChange={e => setLeave({...leave,start:e.target.value})} /></label><label className="wide"><span>结束时间</span><input name="leave-end" autoComplete="off" type="datetime-local" value={leave.end} onChange={e => setLeave({...leave,end:e.target.value})} /></label><label className="wide"><span>原因</span><input name="leave-reason" autoComplete="off" placeholder="例如：个人事务…" value={leave.reason} onChange={e => setLeave({...leave,reason:e.target.value})} /></label></div><div className="modal-actions"><Button type="button" variant="secondary" onClick={() => setLeaveOpen(false)}>取消</Button><Button className="leave-submit" type="submit">提交审批</Button></div></form></div>}
   </div>;
 }
 
