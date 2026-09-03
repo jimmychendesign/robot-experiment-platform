@@ -10,8 +10,8 @@
 
 - Stage: Interactive prototype / active development
 - Progress: Core multi-role console and scheduling flows implemented with local mock data
-- Last Updated: 2026-08-24
-- Latest Release: v0.1.2 (`output/html/2026-08-21_v0.1.2/`)
+- Last Updated: 2026-09-02
+- Latest Release: v0.3.0 (`output/html/2026-08-28_v0.3.0/`)
 - Latest Release Type: Portable Build
 
 ## Tech Stack
@@ -31,8 +31,8 @@ The active application source lives in `app/`. Historical shareable releases liv
 
 ## Product Areas
 
-- 管理员控制台：Robot 状态、容量、排期、Tester 分配与异常处理。
-- 需求方控制台：实验需求创建、组合配置、审核与进度查看。
+- 管理员控制台：四列响应式 Robot 卡片、批量与单机共用的时间配置、在线/暂停/维护设置、排期派生运行状态、容量与设备独立排期；Tester 排班在实验员管理中独立处理；需求详情按状态提供创建、验证、问题分类、修复、重新验证和测试完成操作。
+- 需求方控制台：实验需求手动创建与 Excel 批量导入、待处理阶段的完整回填修改与二次确认删除、后续阶段取消与完成结果确认，以及包含待确认、已完成和已取消的宏观进度筛选。
 - 实验员控制台：当日任务、执行状态、Break/请假与任务详情。
 - 共享体验：角色切换、筛选、Drawer/Modal、状态与冲突反馈。
 - 双语体验：顶部可在中文与英文之间切换，并在当前浏览器保留语言偏好。
@@ -55,6 +55,8 @@ Use semantic versioning. Start with `v0.1.0`, and never overwrite a historical r
 
 | Version | Date | Type | Summary |
 |---|---|---|---|
+| v0.3.0 | 2026-08-28 | Portable Build | Complete requester/manager Requirement Detail actions, validation/repair loops, and retained cancellation state |
+| v0.2.0 | 2026-08-26 | Portable Build | Unified Requirement workflow/status and Excel batch request intake |
 | v0.1.2 | 2026-08-21 | Portable Build | Tester workday queue and manager leave-approval UX refinements |
 | v0.1.1 | 2026-08-21 | Portable Build | Corrected browser-only bundle; browser-validated role switching and key interactions |
 | v0.1.0 | 2026-08-21 | Portable Build | Superseded: initial SSR shell did not reliably preserve client interaction |
@@ -68,7 +70,14 @@ Use semantic versioning. Start with `v0.1.0`, and never overwrite a historical r
 - Client-side state: Resets on page reload.
 - Mock data: Robot, tester, request, experiment, schedule, leave, and break data are simulated.
 - Simulated backend behavior: Scheduling, assignment, conflict handling, and status transitions are front-end simulations.
-- Product requirements: The scheduling workflow is now specified in three connected role PRDs under `docs/prd/`, with `docs/prd.md` as the shared contract and index.
+- Request intake: Request submission creates a pending request; requester editing and confirm-delete are allowed until manager processing locks it. Later active stages expose cancellation without deleting linked records.
+- Manager validation: Manager-triggered creation/linking, retry, initial validation, Policy/JSON issue routing, repair completion, re-validation, and pass-to-Test-Execution transitions are simulated in the request detail drawer.
+- Request detail Stepper: Fixed six-stage flow with a separate current Status line; DEBUG, re-export, and re-validation remain within Request Validation.
+- Request notifications: Requirement Detail keeps a lifecycle timeline; the global Header provides role-scoped notifications with unread counts, read state, mark-all-read, and direct access to permitted request details. Notification state is currently in-memory.
+- Requester list status: “我的需求” derives macro Requirement Status values from the internal workflow, including 已取消; granular Stage and Status remain in request detail.
+- Cross-role request status: Manager and requester Requirement lists call the same mapping and display identical macro status for the same Requirement.
+- Excel request intake: The requester can download the current form-aligned `.xlsx` template, upload up to 200 rows, validate atomically, and create Pending Requirements in client state.
+- Product requirements: `docs/prd/README.md` is the PRD Registry; PRD-004 through PRD-006 are the current requester, manager, and Tester requirements under `docs/prd/active/`. PRD-001 through PRD-003 are superseded archives, and the shared scheduling contract lives under `docs/prd/shared/`.
 
 ## Known Issues
 

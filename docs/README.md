@@ -5,10 +5,11 @@ Project documentation is organized here according to purpose:
 - `architecture.md`: runtime shape, source boundaries, state, authentication, hosting, and verification.
 - `design.md`: visual language, design tokens, layout, typography, and component rules.
 - `product-overview.md`: stable product context, goals, users, and scope.
-- `prd.md`: approved PRD index, shared scheduling contract, and links to the three role PRDs under `prd/`.
-- `prd/PRD-001-experiment-requester.md`: requester demand submission and schedule tracking.
-- `prd/PRD-002-experiment-manager.md`: manager resource maintenance, leave approval, and exception handling.
-- `prd/PRD-003-tester.md`: tester queue, execution, leave, and Break behavior.
+- `standards/prd-writing-guide.md`: version-controlled PRD format and writing rules.
+- `prd/README.md`: PRD Registry, lifecycle definitions, archive authority, and document locations.
+- `prd/active/`: PRDs that still describe current or planned behavior.
+- `prd/shared/`: cross-PRD contracts maintained as a single source of truth.
+- `prd/archive/`: explicitly superseded, cancelled, or obsolete PRDs retained as history.
 - `feature-list.md`: feature inventory, priority, status, and version.
 - `user-flow.md`: primary, branching, exception, and recovery flows.
 - `business-rules.md`: executable scheduling and operational rules.

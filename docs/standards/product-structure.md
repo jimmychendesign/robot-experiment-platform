@@ -162,7 +162,7 @@ flowchart LR
 ### 4.2 关系说明
 
   -----------------------------------------------------------------------
-  上游对象                关系                    下游对象
+  上游对象                 关系                    下游对象
   ----------------------- ----------------------- -----------------------
   Task Type               定义 / 产生             Task
 
@@ -190,7 +190,7 @@ flowchart LR
 
 ### 5.1 产品域编号
 
-  编号   产品域
+  编号    产品域
   ------ -----------------------
   EXP    Experiment Management
   TSK    Task Management
@@ -321,17 +321,26 @@ stateDiagram-v2
 
 ### 8.1 角色定义
 
-  角色                    说明
-  ----------------------- -------------------------------------------
-  Admin                   系统管理员
-  Experiment Manager      实验管理者
-  Experiment Maintainer   实验维护者
-  Annotator Manager       标注管理员
-  Annotator               标注人员
-  Policy Manager          策略管理员
-  Assets Manager          资产管理员
-  Data Maintainer         数据维护人员 - 管理 ES 平台数据，海外专线
-  Tester                  实验执行人员
+| 角色 | 中文名称 | 说明 |
+|---|---|---|
+| Admin | 系统管理员 | 系统管理 |
+| Experiment Manager | 实验管理者 | 实验管理 |
+| Experiment Maintainer | 实验维护者 | 实验维护 |
+| Annotator Manager | 标注管理员 | 标注管理 |
+| Annotator | 标注人员 | 标注执行 |
+| Policy Manager | 策略管理员 | 策略管理 |
+| Assets Manager | 资产管理员 | 资产管理 |
+| Data Maintainer | 数据维护人员 | 管理 ES 平台数据、海外专线 |
+| Experiment Requester | 实验需求员 | 提出实验需求并跟踪 Requirement 生命周期及最终测试结果 |
+| Experiment Requirement Manager | 实验需求管理员 | 接收和处理 Requirement、创建/关联 Experiment，并完成最终测试交付确认 |
+| Experiment Requirement Verifier | 实验需求验证员 | 验证 Requirement 对应 Experiment 的 Policy、Config、JSON 及实验环境是否满足正式测试条件 |
+| Requirements Validation Engineer | 需求验证工程师 | 处理验证过程中的 JSON / 实验配置问题，并在修复后提交重新验证 |
+| Tester | 实验员 | 执行正式实验以及相关实验结果处理 |
+
+> `Experiment Requester`、`Experiment Requirement Manager`、
+> `Experiment Requirement Verifier` 和 `Requirements Validation Engineer`
+> 为新增正式 RBAC Role；`Tester` 为既有正式角色。详细职责和功能权限见
+> `docs/roles-permissions.md`。
 
 ### 8.2 权限定义
 
@@ -349,7 +358,7 @@ stateDiagram-v2
 ## 9. PRD 引用
 
   -----------------------------------------------------------------------
-  业务对象          功能（产品域）    功能              功能点
+  业务对象            功能（产品域）      功能              功能点
   ----------------- ----------------- ----------------- -----------------
   Experiment        Experiment        EXP-001           EXP-001.2 Quick
                     Management                          Create

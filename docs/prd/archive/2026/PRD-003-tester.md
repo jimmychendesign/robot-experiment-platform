@@ -1,10 +1,25 @@
+---
+prd_id: PRD-003
+title: 实验员：任务执行与个人可用性
+status: Superseded
+implementation_status: Partial
+domain: Experiment Management / Experiment Schedule
+owner: TBD
+related_features: [F-006, F-007, F-008, F-009]
+shared_contracts: [../../shared/scheduling-contract.md]
+supersedes: null
+superseded_by: PRD-006
+last_updated: 2026-08-26
+archived_at: 2026-08-26
+archive_reason: Replaced by a newly issued role PRD after an explicit user-requested archive.
+---
+
 # PRD-003 实验员：任务执行与个人可用性
 
-> 文档状态：Confirmed  
-> 角色：实验员（Tester）  
-> 产品域：Experiment Management / Experiment Schedule  
-> 实现基线：当前 React/vinext 交互原型（本地 Mock 状态）  
-> 关联 PRD：[PRD-001 实验需求方](./PRD-001-experiment-requester.md) · [PRD-002 实验管理者](./PRD-002-experiment-manager.md)
+角色：实验员（Tester）  
+关联归档 PRD：[PRD-001 实验需求方](./PRD-001-experiment-requester.md) · [PRD-002 实验管理者](./PRD-002-experiment-manager.md)  
+替代版本：[PRD-006 实验员](../../active/PRD-006-tester.md)  
+共享契约：[实验调度共享契约](../../shared/scheduling-contract.md)
 
 ## 1. Overview
 

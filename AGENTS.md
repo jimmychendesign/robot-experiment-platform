@@ -136,7 +136,13 @@ Use the following product documentation structure:
 ```text
 docs/
 ├── product-overview.md
-├── prd.md
+├── standards/
+│   └── prd-writing-guide.md
+├── prd/
+│   ├── README.md
+│   ├── active/
+│   ├── shared/
+│   └── archive/
 ├── feature-list.md
 ├── user-flow.md
 ├── business-rules.md
@@ -153,27 +159,25 @@ docs/
 
 Maintain stable product context: product background, problem statement, goals, non-goals, target users, core value proposition, success metrics, and high-level scope.
 
-#### `docs/prd.md`
+#### `docs/standards/prd-writing-guide.md`
 
-Maintain the current approved product requirements. Use the following structure when applicable:
+Maintain the repository's authoritative PRD format, numbering rules, section responsibilities, and writing conventions. Read this guide completely before creating or materially updating a PRD. Do not silently replace its required structure with a different template.
 
-1. Overview
-2. Background / Problem
-3. Goals and Non-goals
-4. Users and Roles
-5. Scope
-6. User Stories
-7. User Flow
-8. Functional Requirements
-9. Business Rules
-10. System States
-11. Roles and Permissions
-12. Loading / Empty / Error / Exception States
-13. Acceptance Criteria
-14. Dependencies
-15. Open Questions
+#### `docs/prd/README.md`
 
-The PRD should describe expected product behavior and verifiable outcomes. Avoid unnecessary implementation details.
+Maintain the PRD Registry. It is the authoritative index for PRD identifiers, titles, product domains, requirement status, implementation status, related features, successor relationships, and current file locations. Keep it concise; detailed requirements belong in individual PRDs.
+
+#### `docs/prd/active/`
+
+Store PRDs that still describe current or planned product behavior. Draft, under-discussion, confirmed, in-progress, implemented, and validated PRDs remain active unless an explicit product decision makes them inactive.
+
+#### `docs/prd/shared/`
+
+Store cross-PRD contracts, definitions, or system behavior that multiple PRDs must share. Maintain one detailed source of truth and reference it from individual PRDs instead of duplicating rules.
+
+#### `docs/prd/archive/`
+
+Store only PRDs whose inactive status has been explicitly confirmed. Archived PRDs are historical records and must retain their original decision context.
 
 #### `docs/feature-list.md`
 
@@ -223,9 +227,66 @@ Record changes to approved product requirements, including date, change, reason,
 
 Store user research, competitor research, data analysis, sources, and findings. Clearly distinguish facts, inferences, and recommendations.
 
+## PRD Governance
+
+### PRD Creation and Update Rules
+
+Before creating a PRD:
+
+1. Read `docs/standards/prd-writing-guide.md` completely.
+2. Read `docs/prd/README.md` and search all active PRDs for overlapping goals and scope.
+3. Update an existing PRD when the request extends the same goal and scope.
+4. Create a new PRD only for a distinct iteration, a materially different goal or scope, or an approved replacement.
+5. Allocate the next unused `PRD-XXX` identifier from the Registry. Never reuse an identifier, including an archived one.
+6. Add the required metadata defined by the writing guide or Registry.
+7. Store shared logic once in `docs/prd/shared/` or the appropriate long-term product document and reference it from individual PRDs.
+8. Update the Registry, affected formal product documents, and the current session record in the same work phase.
+
+PRDs describe expected behavior and verifiable outcomes. Avoid unnecessary implementation details, and do not present unconfirmed recommendations as approved requirements.
+
+### PRD Lifecycle
+
+Use these document lifecycle statuses consistently:
+
+- `Draft`: initial document not yet approved;
+- `Under Discussion`: direction is still being evaluated;
+- `Confirmed`: requirements are approved;
+- `In Progress`: implementation is underway;
+- `Implemented`: implementation is complete but may still need validation;
+- `Validated`: current behavior has been verified;
+- `Superseded`: a confirmed successor fully replaces the PRD;
+- `Cancelled`: the requirement was explicitly cancelled;
+- `Obsolete`: the represented capability was explicitly retired.
+
+`Draft`, `Under Discussion`, `Confirmed`, `In Progress`, `Implemented`, and `Validated` belong in `docs/prd/active/`. Implementation or validation alone is not an archive trigger.
+
+### PRD Archive Rules
+
+Move a PRD to `docs/prd/archive/` only when one of the following is explicitly confirmed:
+
+1. A newer confirmed PRD fully supersedes it.
+2. The requirement is cancelled.
+3. The represented capability is retired.
+
+Age, implementation completion, release publication, inactivity, a similar title, or drift between code and documentation are not sufficient archive reasons.
+
+Codex may identify and report archive candidates, but must not change status or move a PRD without explicit user confirmation or an existing confirmed product decision.
+
+Before archiving a PRD:
+
+1. Update its status and record `archived_at`, `archive_reason`, and `superseded_by` when applicable.
+2. Record `supersedes` in the successor when applicable.
+3. Update `docs/prd/README.md`.
+4. Move the file to `docs/prd/archive/YYYY/` without rewriting its historical requirements.
+5. Update affected links, decisions, changelog entries, and the current session record.
+
+Treat archived PRDs as immutable historical records. Add dated errata when correction is necessary rather than silently rewriting original requirements.
+
 ## Product Requirement Status
 
 Treat product content as one of the following states.
+
+These states describe requirement certainty and implementation progress. PRD file placement and archival eligibility are governed separately by the PRD Lifecycle and Archive Rules above.
 
 ### Under Discussion
 
@@ -324,7 +385,7 @@ Organize confirmed requirements into affected `docs/` files, mark uncertainty as
 
 ### When the user says `生成 PRD`
 
-Create or update `docs/prd.md` with relevant goals, users, scope, stories, flows, rules, states, permissions, exceptions, acceptance criteria, dependencies, and Open Questions. Do not invent missing information or create a release.
+Read `docs/standards/prd-writing-guide.md` and the PRD Registry completely. Determine whether the request should update an active PRD or create a new one. Create new PRDs under `docs/prd/active/`, follow the required guide structure, add required metadata, reference shared sources of truth, and update `docs/prd/README.md`. Do not invent missing information, archive another PRD without confirmed authority, or create a release.
 
 ### When the user says `同步产品文档`
 
@@ -336,16 +397,18 @@ Append the confirmed decision to `docs/decisions.md` with date, context, reason,
 
 ### When the user says `实现当前需求`
 
-Read relevant PRD, rules, states, permissions, and implementation; implement the confirmed requirement; run appropriate lint, typecheck, tests, build, and browser checks; update affected product documents, feature status, and today's session; do not create a release.
+Read the relevant active PRD, shared contracts, rules, states, permissions, and implementation; implement the confirmed requirement; run appropriate lint, typecheck, tests, build, and browser checks; update implementation status in the PRD Registry, affected product documents, feature status, and today's session; do not create a release.
 
 ### When the user says `结束本次工作`
 
-Update today's session, summary, todo, and `PROJECT.md`; ensure confirmed decisions are reflected in formal product documents; update `README.md` only if setup or usage changed; do not create a release unless separately requested.
+Update today's session, summary, todo, and `PROJECT.md`; ensure confirmed decisions are reflected in active PRDs, shared contracts, the PRD Registry, and other affected formal product documents; update `README.md` only if setup or usage changed; do not create a release unless separately requested.
 
 ## Documentation and Output Layout
 
 - `docs/architecture.md`: architecture and technical decisions.
 - `docs/design.md`: visual specification and design-system guidance.
+- `docs/standards/`: version-controlled documentation standards and writing guides.
+- `docs/prd/`: PRD Registry, active PRDs, shared contracts, and confirmed archives.
 - `docs/research.md`: research inputs and conclusions.
 - `docs/notes.md`: durable working notes.
 - `prompts/`: reusable task prompts.
@@ -362,12 +425,13 @@ Update today's session, summary, todo, and `PROJECT.md`; ensure confirmed decisi
 
 1. Read `AGENTS.md` and `PROJECT.md`.
 2. Read the product documents relevant to the task.
-3. Inspect the current project and git status.
-4. Determine whether the requirement is Under Discussion, Confirmed, or Implemented.
-5. Make changes to `app/` only when implementation is requested.
-6. Run appropriate validation.
-7. Update affected product documentation and today's session.
-8. Do not create a release unless explicitly requested.
+3. For PRD work, read the PRD writing guide and Registry before creating or updating files.
+4. Inspect the current project and git status.
+5. Determine whether the requirement is Under Discussion, Confirmed, or Implemented.
+6. Make changes to `app/` only when implementation is requested.
+7. Run appropriate validation.
+8. Update affected product documentation and today's session.
+9. Do not create a release unless explicitly requested.
 
 ### When the user requests a Portable Release
 
