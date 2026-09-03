@@ -1,5 +1,12 @@
 # Product Documentation Changelog
 
+## 2026-09-03 — PRD-004 FR-001 role-specific lifecycle actions
+
+- Change: Updated FR-001 with the supplied Requirement aggregate-status layout, role-bearing Stepper, requester actions, and separate action matrices for Experiment Requirement Manager, Experiment Requirement Verifier, and Requirements Validation Engineer. Added acceptance criteria for each role-specific CTA and retained unresolved permission conflicts explicitly instead of silently reconciling them.
+- Reason: Make Requirement detail ownership and available actions clear for each lifecycle role while preserving the confirmed pending-confirmation delivery gate.
+- Affected modules: PRD-004 FR-001, Requirement Status, Requirement Detail Stepper, Role-specific Requirement Actions, Acceptance Criteria, Permission Consistency.
+- Related version: Documentation-only; no product release.
+
 ## 2026-09-02 — PRD-005 current-app alignment
 
 - Change: Reconciled PRD-005 with the current three-page manager console, Robot and Tester schedule views, selection-based Robot configuration, Requirement processing and delivery confirmation, and the role-scoped application notification center. Updated formal Scope to the feature IDs confirmed by the product structure and feature workbook, added six-state Requirement mapping and acceptance criteria, and recorded current prototype deviations without converting them into approved behavior.

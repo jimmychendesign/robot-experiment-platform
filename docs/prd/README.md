@@ -8,7 +8,7 @@
 
 | PRD ID | Title | Domain | PRD Status | Implementation | Related Features | Last Updated |
 |---|---|---|---|---|---|---|
-| PRD-004 | [实验需求方：需求提交与排期追踪](./active/PRD-004-experiment-requester.md) | Experiment Management / Experiment Schedule | Confirmed | Partial | EXP-007.1, EXP-305.1/.2/.4; asset gaps pending | 2026-09-02 |
+| PRD-004 | [实验需求方：需求提交与排期追踪](./active/PRD-004-experiment-requester.md) | Experiment Management / Experiment Schedule | Confirmed | Partial | EXP-007.1, EXP-305.1/.2/.4; asset gaps pending | 2026-09-03 |
 | PRD-005 | [实验管理者：资源维护与调度例外处理](./active/PRD-005-experiment-manager.md) | Asset Management / Robot; Experiment Management / Experiment Schedule | Confirmed | Partial | EXP-007.1, EXP-304.*, EXP-305.1–EXP-305.3; Requirement/RBAC/notification/asset gaps pending | 2026-09-02 |
 | PRD-006 | [实验员：任务执行与个人可用性](./active/PRD-006-tester.md) | Experiment Management / Experiment Schedule | Confirmed | Partial | EXP-007.1, EXP-304.1/.2/.3; asset gaps pending | 2026-08-27 |
 

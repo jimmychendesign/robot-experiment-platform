@@ -9,7 +9,7 @@ related_features: [EXP-007.1, EXP-305.1, EXP-305.2, EXP-305.4]
 shared_contracts: [../shared/scheduling-contract.md]
 supersedes: PRD-001
 superseded_by: null
-last_updated: 2026-09-02
+last_updated: 2026-09-03
 ---
 
 # PRD-004 实验需求方：需求提交与排期追踪
@@ -324,7 +324,7 @@ flowchart TD
 
 #### 功能说明
 
-需求方可查看全部需求、关联实验数量、今日可用容量和需求处理状态，并按“全部、待处理、处理中、实验中、<mark>待确认</mark>、已完成”筛选自己的需求。
+需求方可查看全部需求、关联实验数量、今日可用容量和需求处理状态，并按“全部、待处理、处理中、实验中、待确认、已完成、已取消”筛选自己的需求。
 
 #### Data / Content
 
@@ -332,36 +332,38 @@ flowchart TD
 
 #### Requirement Status 映射
 
-| 需求处理状态 | 状态说明 | 对应需求详情 Stepper 阶段 | 包含的内部阶段 / 状态 |
+| 需求处理状态 | 状态说明 | 需求详情步骤器阶段 | 步骤器内部状态 |
 |---|---|---|---|
-| 待处理 | 需求已经提交，但还没有正式进入验证和测试流程 | ① 需求处理 / ② 实验创建 | 待处理、待创建 |
+| 待处理 | 需求已经提交，但还没有正式进入验证和测试流程 | ① 需求处理 | 待处理 |
+| 待处理 | 需求已经提交，但还没有正式进入验证和测试流程 | ② 实验创建 | 待创建 |
 | 处理中 | 实验已经创建，正在进行测试前的准备、验证或问题处理 | ③ 需求验证 | 待验证、验证中、Policy 修复中、DEBUG 中、待重新验证、重新验证中 |
-| 实验中 | 需求已经通过前置验证，进入正式测试及测试结果处理阶段 | ④ 测试执行 / ⑤ 结果审核 | 待实验、实验中、待审核、审核中、驳回重测 |
-| <mark>待确认</mark> | <mark>本轮测试与审核已经全部通过，等待实验需求管理员确认完成交付</mark> | <mark>⑥ 完成交付</mark> | <mark>待确认</mark> |
-| <mark>已完成</mark> | <mark>实验需求管理员已确认本次需求的测试结果，Requirement 生命周期已经完成</mark> | <mark>⑥ 完成交付</mark> | <mark>已完成</mark> |
+| 实验中 | 需求已经通过前置验证，进入正式测试及测试结果处理阶段 | ④ 测试执行 / ⑤ 结果审核 | 待实验、实验中 |
+| 实验中 | 需求已经通过前置验证，进入正式测试及测试结果处理阶段 | ⑤ 结果审核 | 待审核、审核中、驳回重测 |
+| 待确认 | 本轮测试与审核已经全部通过，等待实验需求管理员确认完成交付 | ⑥ 完成交付 | 待确认 |
+| 已完成 | 实验需求管理员已确认本次需求的测试结果，Requirement 生命周期已经完成 | ⑥ 完成交付 | 已完成 |
 | 已取消 | 需求取消 | 需求取消 | 需求取消 |
 
 #### 需求详情 Stepper
 
 - **需求详情中 Stepper** 用于需求详情展示更细的业务流程，具体内部状态决定当前步骤条停留在哪一个阶段。
 
-| Step | 流程阶段 | 状态 | 当前负责人 | 主要操作 / 判断 | 完成后流转 |
+| Step | 状态 | 当前负责人 | Role | 主要操作 / 判断 | 完成后流转 |
 |---|---|---|---|---|---|
-| ① | 需求处理 | 待处理 | Freddy Fu / Niko Ni / Felix Yuan | 创建 Requirement，填写需求描述、测试模型、测试内容、测试机器等 | 准备完成 → 待创建 |
-| ② | 实验创建 | 待创建 | Freddy Fu / Niko Ni / Felix Yuan | 根据 Requirement 创建对应 Experiments，并完成测试前配置 | 创建完成 → 待验证 |
-| ③ | 需求验证 | 待验证 | Agumon Cui | 等待验证实验 | 开始验证 → 验证中 |
-| ③ | 需求验证 | 验证中 | Agumon Cui | 验证 Policy、Config、JSON、实验环境及 Experiment 是否正常运行 | 通过 → 待实验；失败 → 选择问题类型 |
-| ③A | 需求验证 | Policy 修复中 | Zeyu Pan | 验证失败选择 **Policy 问题**；模型团队修复 Policy / Model 并重新导出 | 修复完成 → 待重新验证 |
-| ③B | 需求验证 | DEBUG 中 | Victor Tao | 验证失败选择 **JSON 问题 / 需要 DEBUG**；修复 JSON / 实验配置 | DEBUG 完成 → 待重新验证 |
-| ③ | 需求验证 | 待重新验证 | Agumon Cui | Policy / JSON 已完成修复，等待回归验证 | 开始验证 → 重新验证中 |
-| ③ | 需求验证 | 重新验证中 | Agumon Cui | 对修复后的 Policy / JSON / Experiment 重新验证 | 通过 → 待实验；失败 → 再次选择 Policy / JSON 问题 |
-| ④ | 测试执行 | 待实验 | 实验测试员 | 等待正式测试 | 开始实验 → 实验中 |
-| ④ | 测试执行 | 实验中 | 实验测试员 | 执行 Requirement 下 Experiments，上传实验结果和 Report | 全部完成 → 待审核 |
-| ⑤ | 结果审核（标注流程） | 待审核 | 实验测试员 | 等待实验结果审核 | 开始审核 → 审核中 |
-| ⑤ | 结果审核（标注流程） | 审核中 | 实验测试员 | 审核测试过程、数据完整性和测试结果 | 通过 → 待确认；不通过 → 驳回重测 |
-| ⑤ | 结果审核（标注流程） | 驳回重测 | Freddy Fu | 根据审核结果重新执行需要重测的 Experiment | 重测完成 → 待审核 |
-| ⑥ | 完成交付 | 待确认 | Freddy Fu | 查看最终测试结果并确认本次需求的交付 | 点击「测试完成」→ 已完成 |
-| ⑥ | 完成交付 | 已完成 | 需求人 | 查看最终交付并可点击「确认已查看」 | 流程结束；「确认已查看」只记录查看结果，不改变状态 |
+| ① 需求处理 | 待处理 | Freddy Fu / Niko Ni / Felix Yuan | Experiment Requester 实验需求员 | 创建 Requirement，填写需求描述、测试模型、测试内容、测试机器等 | 准备完成 → 待创建 |
+| ② 实验创建 | 待创建 | Freddy Fu / Niko Ni / Felix Yuan | Experiment Requirement Manager 实验需求管理员 | 根据 Requirement 创建对应 Experiments，并完成测试前配置 | 创建完成 → 待验证 |
+| ③ 需求验证 | 待验证 | Agumon Cui | Experiment Requirement Verifier 实验需求验证员 | 等待验证实验 | 开始验证 → 验证中 |
+| ③ 需求验证 | 验证中 | Agumon Cui | Experiment Requirement Verifier 实验需求验证员 | 验证 Policy、Config、JSON、实验环境及 Experiment 是否正常运行 | 通过 → 待实验；失败 → 选择问题类型 |
+| ③A 需求验证 | Policy 修复中 | Zeyu Pan | Experiment Requester 实验需求员 | 验证失败选择 **Policy 问题**；模型团队修复 Policy / Model 并重新导出 | 修复完成 → 待重新验证 |
+| ③B 需求验证 | DEBUG 中 | Victor Tao | Requirements Validation Engineer 需求验证工程师 | 验证失败选择 **JSON 问题 / 需要 DEBUG**；修复 JSON / 实验配置 | DEBUG 完成 → 待重新验证 |
+| ③ 需求验证 | 待重新验证 | Agumon Cui | Experiment Requirement Verifier 实验需求验证员 | Policy / JSON 已完成修复，等待回归验证 | 开始验证 → 重新验证中 |
+| ③ 需求验证 | 重新验证中 | Agumon Cui | Experiment Requirement Verifier 实验需求验证员 | 对修复后的 Policy / JSON / Experiment 重新验证 | 通过 → 待实验；失败 → 再次选择 Policy / JSON 问题 |
+| ④ 测试执行 | 待实验 | 实验测试员 | Tester 实验员 | 等待正式测试 | 开始实验 → 实验中 |
+| ④ 测试执行 | 实验中 | 实验测试员 | Tester 实验员 | 执行 Requirement 下 Experiments，上传实验结果和 Report | 全部完成 → 待审核 |
+| ⑤ 结果审核 | 待审核 | 实验测试员 | Tester 实验员 | 等待实验结果审核 | 开始审核 → 审核中 |
+| ⑤ 结果审核 | 审核中 | 实验测试员 | Tester 实验员 | 审核测试过程、数据完整性和测试结果 | 通过 → 待确认；不通过 → 驳回重测 |
+| ⑤ 结果审核 | 驳回重测 | 实验测试员 | Tester 实验员 | 根据审核结果重新执行需要重测的 Experiment | 重测完成 → 待审核 |
+| ⑥ 完成交付 | 待确认 | Freddy Fu | Experiment Requirement Manager 实验需求管理员 | 确认本次需求的测试结果 | 点击「测试完成」→ 已完成 |
+| ⑥ 完成交付 | 已完成 | Freddy Fu | — | 查看最终测试结果 | 流程结束 |
 
 #### 实验需求方流程
 
@@ -369,40 +371,48 @@ flowchart TD
 |---|---|---|---|---|---|---|---|
 | ① 需求处理 | 待处理 | 完善需求信息 | 修改需求 | 删除需求 | 提交需求 → 待创建，进入实验管理员处理队列 | — | 修改需求：编辑需求<br/>删除需求：删除需求不可恢复 |
 | ② 实验创建 | 待创建 | 等待管理员创建 Experiment | 取消需求 | — | 需求方以查看为主 | — | 取消需求：通知当前负责人需求已取消 |
-| ③ 需求验证 | 待验证 | 等待验证 | 取消需求 | — | 显示当前负责人 | — | 取消需求：通知当前负责人需求已取消 |
+| ③ 需求验证 | 待验证 | 等待验证 | 取消需求 | — | 显示需求创建人 | — | 取消需求：通知当前流程处理人需求已取消 |
 | ③ 需求验证 | 验证中 | 等待验证结果 | 取消需求 | — | 验证通过进入测试；失败进入对应问题处理 | — | 取消需求：通知当前负责人需求已取消 |
-| ③ 需求验证 | Policy 修复中 | 等待模型团队完成 Policy 修复 | 取消需求 | — | 等待 Policy 更新 | — | 取消需求：通知当前负责人需求已取消 |
+| ③ 需求验证 | Policy 修复中 | 完成 Policy 修复 | Policy修复完成 | 取消需求 | 显示需求验证员反馈文本内容 | — | Policy 更新原 Experiment 并进入待重新验证；取消需求：通知当前流程处理人需求已取消 |
 | ③ 需求验证 | DEBUG 中 | 等待实验团队修复 JSON | 取消需求 | — | 等待 DEBUG | — | 取消需求：通知当前负责人需求已取消 |
-| ③ 需求验证 | 待重新验证 | 等待负责人回归验证 | 取消需求 | — | 显示 Policy 或 JSON 已修复，等待重新验证 | — | 取消需求：通知当前负责人需求已取消 |
+| ③ 需求验证 | 待重新验证 | 等待负责人回归验证 | 取消需求 | — | 显示 Policy 或 JSON 已修复，等待重新验证 | — | 取消需求：通知当前流程处理人需求已取消 |
 | ③ 需求验证 | 重新验证中 | 等待验证结果 | 取消需求 | — | 验证通过进入待实验；失败再次进入 Policy / DEBUG 修复 | — | 取消需求：通知当前负责人需求已取消 |
 | ④ 测试执行 | 待实验 | 等待测试 | 取消需求 | — | 可以查看关联实验和当前排期 | 所有关联 Experiment 均为 Created / Assigned，即没有任何实验开始过 | 取消需求：通知当前负责人需求已取消 |
 | ④ 测试执行 | 实验中 | 跟踪测试进度 | 取消需求 | — | 可以查看各实验执行状态 | 至少 1 个 Experiment 为 Running / Completed / Aborted，且仍存在未结束的 Experiment（Created / Assigned / Running） | 取消需求：通知当前负责人需求已取消 |
 | ⑤ 结果审核（标注流程） | 待审核 | 等待标注审核 | 取消需求 | — | 可以看到当前处于审核阶段（标注流程） | 所有 Experiment 均已结束执行（Completed / Aborted），且至少存在 1 个 Annotation = Needs Review，同时不存在 In Progress | — |
 | ⑤ 结果审核（标注流程） | 审核中 | 标注审核中 | 取消需求 | — | 可以看到当前处于审核阶段（标注流程） | 所有 Experiment 均已结束执行，且至少存在 1 个 Annotation = In Progress | 取消需求：通知当前负责人需求已取消 |
-| ⑤ 结果审核 | 驳回重测 | 等待重测 | — | — | 明确显示哪些实验被驳回重测 | 所有 Annotation 均已完成审核（不存在 Needs Review / In Progress），且至少存在 1 个 Annotation = Need Retest | — |
-| ⑥ 完成交付 | 待确认 | 等待交付确认 | — | — | 本轮测试与审核已通过，等待完成交付确认 | 本轮所有需要审核的 Annotation 均 = Passed，不存在 Need Retest / Needs Review / In Progress | — |
+| ⑤ 结果审核 | 驳回重测 | 等待重测 | 取消需求 | — | 明确显示哪些实验被驳回重测 | 所有 Annotation 均已完成审核（不存在 Needs Review / In Progress），且至少存在 1 个 Annotation = Need Retest | 取消需求：通知当前流程处理人需求已取消 |
+| ⑥ 完成交付 | 待确认 | 等待交付确认 | 取消需求 | — | 本轮测试与审核已通过，等待完成交付确认 | 本轮所有需要审核的 Annotation 均 = Passed，不存在 Need Retest / Needs Review / In Progress | 取消需求：通知当前流程处理人需求已取消 |
 | ⑥ 完成交付 | 已完成 | 查看最终交付 | 确认已查看 | — | 需求生命周期结束，可查看完整测试结果 | 本轮所有需要审核的 Annotation 均 = Passed，不存在 Need Retest / Needs Review / In Progress | 需求方可对已完成需求执行「确认已查看」，该操作仅用于记录交付结果已被需求方查看 |
 
-#### 实验管理员方流程
+#### Experiment Requirement Manager 实验需求管理员流程
 
-| Step | 当前状态 | 当前负责人 | 主 CTA | 副 CTA | 说明 | 状态特别说明 | CTA 后预期效果 |
-|---|---|---|---|---|---|---|---|
-| ① 需求处理 | 待处理 | Freddy Fu / Niko Ni / Felix Yuan | 开始处理 | 取消 | 管理员等待需求正式提交 | — | 需求更新为实验创建流程，状态为待创建 |
-| ② 实验创建 | 待创建 | Freddy Fu / Niko Ni / Felix Yuan | 关联创建实验 | 取消 | 根据 Requirement 创建 Experiment | — | 成功：显示关联实验<br/>失败：提示关联失败，请重试 |
-| ③ 需求验证 | 待验证 | Agumon Cui | 开始验证 | 取消 | Requirement → 验证中 | — | — |
-| ③ 需求验证 | 验证中 | Agumon Cui | 通过 | 不通过 | 通过 → 待实验；不通过 → 弹出问题类型选择 | — | 验证通过：需求进入测试执行 |
-| ③ 需求验证（弹窗） | 验证不通过 | Agumon Cui | 确认 | 取消 | 必须选择 **Policy 问题 / JSON 问题**；提供可选填输入文本区域 | — | — |
-| ③A 需求验证 | Policy 修复中 | Agumon Cui | Policy修复完成 | 取消 | 显示文本内容<br/>更新 Policy → 待重新验证 | — | — |
-| ③B 需求验证 | DEBUG 中 | Zeyu Pan | Debug完成 | 取消 | 显示文本内容<br/>更新 JSON → 待重新验证 | — | — |
-| ③ 需求验证 | 待重新验证 | Victor Tao | 开始验证 | 取消 | 需求重新验证中 | — | — |
-| ③ 需求验证 | 重新验证中 | Agumon Cui | 通过 | 不通过 | 通过 → 待实验；失败 → 再次选择 Policy / JSON 问题 | — | — |
-| ④ 测试执行 | 待实验 | Agumon Cui | — | — | 可以查看关联实验和当前排期 | 所有关联 Experiment 均为 Created / Assigned，即没有任何实验开始过 | — |
-| ④ 测试执行 | 实验中 | 实验测试员 | — | — | 可以查看各实验执行状态 | 至少 1 个 Experiment 为 Running / Completed / Aborted，且仍存在未结束的 Experiment（Created / Assigned / Running） | — |
-| ⑤ 结果审核 | 待审核 | 实验测试员 | — | — | 可以看到当前处于审核阶段（标注流程） | 所有 Experiment 均已结束执行（Completed / Aborted），且至少存在 1 个 Annotation = Needs Review，同时不存在 In Progress | — |
-| ⑤ 结果审核 | 审核中 | 实验测试员 | — | — | 可以看到当前处于审核阶段（标注流程） | 所有 Experiment 均已结束执行，且至少存在 1 个 Annotation = In Progress | — |
-| ⑤ 结果审核 | 驳回重测 | 实验测试员 | — | — | 明确显示哪些实验被驳回重测 | 所有 Annotation 均已完成审核（不存在 Needs Review / In Progress），且至少存在 1 个 Annotation = Need Retest | — |
-| ⑥ 完成交付 | 待确认 | Freddy Fu | 测试完成 | 取消 | 确认本次需求的测试结果 | 本轮所有需要审核的 Annotation 均 = Passed，不存在 Need Retest / Needs Review / In Progress | — |
-| ⑥ 完成交付 | 已完成 | — | — | — | 需求生命周期结束，可查看完整测试结果 | 本轮所有需要审核的 Annotation 均 = Passed，不存在 Need Retest / Needs Review / In Progress | — |
+本角色仅在下列状态提供可执行 CTA；其他阶段以查看为主，不显示越权操作。
+
+| Step | 当前状态 | 当前负责人 | 主 CTA | 副 CTA | 状态特别说明 | CTA 后预期效果 |
+|---|---|---|---|---|---|---|
+| ① 需求处理 | 待处理 | Freddy Fu / Niko Ni / Felix Yuan | 开始处理 | — | — | 需求更新为实验创建流程，状态为待创建 |
+| ② 实验创建 | 待创建 | Freddy Fu / Niko Ni / Felix Yuan | 关联创建实验 | — | — | 成功：显示关联实验；失败：提示关联失败，请重试 |
+| ⑥ 完成交付 | 待确认 | Freddy Fu | 测试完成 | — | 本轮所有需要审核的 Annotation 均 = Passed，不存在 Need Retest / Needs Review / In Progress | Requirement 更新为已完成 |
+
+#### Experiment Requirement Verifier 实验需求验证员流程
+
+本角色仅在需求验证阶段提供可执行 CTA。
+
+| Step | 当前状态 | 当前负责人 | 主 CTA | 副 CTA | 状态特别说明 | CTA 后预期效果 |
+|---|---|---|---|---|---|---|
+| ③ 需求验证 | 待验证 | Agumon Cui | 开始验证 | — | — | Requirement → 验证中 |
+| ③ 需求验证 | 验证中 | Agumon Cui | 通过 | 不通过 | 点击“不通过”后弹窗选择 Policy 或 JSON 问题 | 通过：需求进入测试执行；不通过：进入选定问题处理流程 |
+| ③ 需求验证 | 待重新验证 | Agumon Cui | 开始验证 | — | — | Requirement → 重新验证中 |
+| ③ 需求验证 | 重新验证中 | Agumon Cui | 通过 | 不通过 | — | 通过：需求进入待实验；不通过：再次选择 Policy / JSON 问题 |
+
+#### Requirements Validation Engineer 需求验证工程师流程
+
+本角色仅处理 JSON / 实验配置问题。
+
+| Step | 当前状态 | 当前负责人 | 主 CTA | 副 CTA | 状态特别说明 | CTA 后预期效果 |
+|---|---|---|---|---|---|---|
+| ③B 需求验证 | DEBUG 中 | Victor Tao | Debug完成 | — | 显示需求验证员反馈文本内容 | 更新原 Experiment 的 JSON / 实验配置并进入待重新验证 |
 
 #### Edge Case
 
@@ -411,7 +421,7 @@ flowchart TD
 | 全流程 | 取消需求 | 任何阶段 | 需求方可发起取消 |
 | 全流程 | 删除待处理需求 | 需求已提交，但管理员尚未开始处理 | 需求方可以删除。删除前二次确认；确认后需求不再进入后续处理流程 |
 | 全流程 | 删除处理中需求 | 管理员已经开始处理，可能已经创建或正在创建 Experiment | 不允许需求方直接删除，避免影响已创建 Experiment 及关联关系 |
-| 全流程 | 删除测试中需求 | 已进入测试执行或结果审核 | 不允许删除，保留 Requirement 与 Experiment 的完整执行记录 |
+| 全流程 | 删除实验中需求 | 已进入测试执行或结果审核 | 不允许删除，保留 Requirement 与 Experiment 的完整执行记录 |
 | ③ 需求验证 | Policy 修复中 | 实验验证过程中发现 Policy 存在问题，需要由模型团队修复模型 | 需求保持在 ③ 需求验证；模型团队修复后通过 API 更新原 Experiment，更新成功后进入待重新验证 |
 | ③ 需求验证 | DEBUG 中 | 实验验证过程中发现实验配置 JSON 存在问题，需要由实验团队修复 JSON | 需求保持在 ③ 需求验证；实验团队修复后通过 API 更新原 Experiment，更新成功后进入待重新验证 |
 | ③ 需求验证 | 重新验证失败 | Policy 或 JSON 修复后仍无法通过验证 | 需求继续停留在 ③ 需求验证阶段，并再次进入对应修复流程，不回退到「② 实验创建」 |
@@ -650,6 +660,45 @@ And 需求详情 Stepper 停留在“完成交付”并显示内部 Status“待
 When 实验需求管理员确认测试结果并点击“测试完成”
 Then Requirement 内部 Status 更新为“已完成”
 And 需求方列表的 Requirement Status 才显示“已完成”
+```
+
+### FR-001-AC-06
+
+```text
+Given 当前用户具有 Experiment Requirement Manager 角色
+When Requirement 分别处于“待处理”“待创建”或“待确认”
+Then 系统分别提供“开始处理”“关联创建实验”或“测试完成”主 CTA
+And 该角色在其他阶段仅可查看，不显示其他角色的处理 CTA
+```
+
+### FR-001-AC-07
+
+```text
+Given 当前用户具有 Experiment Requirement Verifier 角色
+When Requirement 处于“待验证”“验证中”“待重新验证”或“重新验证中”
+Then 系统按状态分别提供“开始验证”或“通过 / 不通过”CTA
+And 验证不通过时必须弹窗选择 Policy 或 JSON 问题
+```
+
+### FR-001-AC-08
+
+```text
+Given 当前用户具有 Requirements Validation Engineer 角色
+And Requirement 处于“DEBUG 中”
+When 用户查看需求详情
+Then 系统显示实验需求验证员反馈文本
+And 提供“Debug完成”CTA
+And 点击后更新原 Experiment 的 JSON / 实验配置并进入“待重新验证”
+```
+
+### FR-001-AC-09
+
+```text
+Given 当前用户具有 Experiment Requester 角色
+When Requirement 处于“Policy 修复中”
+Then 系统显示实验需求验证员反馈文本
+And 提供“Policy修复完成”和“取消需求”CTA
+And 点击“Policy修复完成”后更新原 Experiment 的 Policy 并进入“待重新验证”
 ```
 
 ### FR-002-AC-01
@@ -1049,9 +1098,10 @@ And 服务端必须拒绝无权限角色绕过界面发起的操作请求
 
 #### 权限一致性待确认
 
+- FR-001 的 Stepper 来源把“需求处理 / 待处理”的 Role 记为 Experiment Requester，但分角色流程和 Functional Permission 矩阵把“开始处理实验需求”授予 Experiment Requirement Manager；需确认 Stepper 的 Role 表示当前业务角色还是需求创建角色。
 - 图片中的 Functional Permission 矩阵将“开始验证”“验证通过 / 不通过”“选择 Policy / JSON 问题”全部标记为“—”，但 Role Responsibility 将这些操作定义为 Experiment Requirement Verifier 的职责；正式配置 RBAC 前需确认是否应向该角色授予权限。
-- FR-009 当前将“Policy 修复中”阶段点击“Policy修复完成”的 Role 记为 Experiment Requester，但本矩阵将“完成 Policy 修复”授予 Experiment Requirement Verifier；两处定义需确认后统一。
-- FR-009 当前将“待确认 → 已完成”的 Role 记为 Experiment Requirement Verifier，但本矩阵将“确认测试完成”授予 Experiment Requirement Manager；两处定义需确认后统一。
+- FR-001 与 FR-009 当前将“Policy 修复中”阶段点击“Policy修复完成”的 Role 记为 Experiment Requester，但本矩阵将“完成 Policy 修复”授予 Experiment Requirement Verifier；两处定义需确认后统一。
+- FR-001 的分角色流程及 Functional Permission 矩阵将“待确认 → 已完成”归于 Experiment Requirement Manager，但 FR-009 通知矩阵仍将该事件的 Role 记为 Experiment Requirement Verifier；需确认后统一 FR-009。
 
 ### 8.4 业务规则
 

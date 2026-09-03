@@ -10,8 +10,8 @@
 
 - Stage: Interactive prototype / active development
 - Progress: Core multi-role console and scheduling flows implemented with local mock data
-- Last Updated: 2026-09-02
-- Latest Release: v0.3.0 (`output/html/2026-08-28_v0.3.0/`)
+- Last Updated: 2026-09-03
+- Latest Release: v0.4.0 (`output/html/2026-09-03_v0.4.0/`)
 - Latest Release Type: Portable Build
 
 ## Tech Stack
@@ -55,6 +55,7 @@ Use semantic versioning. Start with `v0.1.0`, and never overwrite a historical r
 
 | Version | Date | Type | Summary |
 |---|---|---|---|
+| v0.4.0 | 2026-09-03 | Portable Build | Role-scoped Requirement notifications, delivery confirmation, and selection-based Robot schedule management |
 | v0.3.0 | 2026-08-28 | Portable Build | Complete requester/manager Requirement Detail actions, validation/repair loops, and retained cancellation state |
 | v0.2.0 | 2026-08-26 | Portable Build | Unified Requirement workflow/status and Excel batch request intake |
 | v0.1.2 | 2026-08-21 | Portable Build | Tester workday queue and manager leave-approval UX refinements |
